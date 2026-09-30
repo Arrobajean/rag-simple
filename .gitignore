@@ -13,5 +13,6 @@ next-env.d.ts
 
 # Generado por pnpm db:bundle
 supabase/all-migrations.sql
+supabase/pendientes.sql
 # PDFs sintéticos generados por el seed
 seed-output/

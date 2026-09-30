@@ -1,6 +1,7 @@
 // Aplica las migraciones de supabase/migrations/ sobre tu proyecto de Supabase.
 //   pnpm db:migrate          → con SUPABASE_DB_URL en .env aplica las migraciones pendientes
 //   pnpm db:bundle           → sin URL: genera supabase/all-migrations.sql para pegar en el SQL Editor
+//   pnpm db:bundle -- --desde=0011  → solo las migraciones desde la 0011 (supabase/pendientes.sql): lo normal tras la primera vez
 //
 // SUPABASE_DB_URL: Supabase > Connect > "Session pooler" (o Direct connection), en formato URI.
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -14,12 +15,14 @@ try {
 }
 
 const bundle = process.argv.includes("--bundle");
+const desde = process.argv.find((a) => a.startsWith("--desde="))?.split("=")[1];
 
 async function main() {
-  const migraciones = readMigrations();
+  const todas = readMigrations();
+  const migraciones = desde ? todas.filter((m) => m.name >= desde) : todas;
 
   if (bundle || !process.env.SUPABASE_DB_URL) {
-    const salida = join(process.cwd(), "supabase", "all-migrations.sql");
+    const salida = join(process.cwd(), "supabase", desde ? "pendientes.sql" : "all-migrations.sql");
     mkdirSync(join(process.cwd(), "supabase"), { recursive: true });
     const sql = migraciones.map((m) => `-- ══ ${m.name} ══\n${m.sql}`).join("\n\n");
     writeFileSync(salida, sql, "utf8");
