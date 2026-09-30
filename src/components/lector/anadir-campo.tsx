@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SelectNativo } from "@/components/ui/select-nativo";
+import { SelectCampo } from "@/components/ui/select-campo";
 import { Textarea } from "@/components/ui/textarea";
 import { useProponerCampo } from "@/hooks/use-campos";
 import type { CampoCatalogo } from "@/lib/types";
@@ -23,7 +23,7 @@ export function AnadirCampo({ disponibles, onAnadir, disabled }: { disponibles: 
     <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed p-3">
       <div className="min-w-48 flex-1 space-y-1">
         <Label htmlFor="anadir-campo" className="text-xs font-semibold">Añadir campo del catálogo</Label>
-        <SelectNativo
+        <SelectCampo
           id="anadir-campo"
           disabled={disabled || disponibles.length === 0}
           value=""
@@ -72,7 +72,7 @@ function ProponerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tipo-campo" className="text-xs font-semibold">Tipo de dato</Label>
-            <SelectNativo id="tipo-campo" value={tipo} opciones={TIPOS} onChange={setTipo} />
+            <SelectCampo id="tipo-campo" value={tipo} opciones={TIPOS} onChange={setTipo} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="desc-campo" className="text-xs font-semibold">Para qué sirve</Label>

@@ -15,13 +15,15 @@ export interface OpcionesAgente {
   signal?: AbortSignal;
   embed?: ContextoHerramientas["embed"];
   hoy?: Date;
+  /** Tokens consumidos en cada llamada al modelo (para medir coste). */
+  onUso?: (u: { entrada: number; salida: number; razonamiento: number }) => void;
 }
 
 /**
  * Bucle del agente: el modelo decide qué herramientas llamar (function calling), el servidor las
  * ejecuta, y el resultado vuelve al modelo hasta que responde con texto. Todo se emite por eventos.
  */
-export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, hoy }: OpcionesAgente): Promise<string> {
+export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, hoy, onUso }: OpcionesAgente): Promise<string> {
   const client = getGeminiClient();
   const fuentes: FuenteDocumento[] = [];
   const ctx: ContextoHerramientas = { data, fuentes, embed };
@@ -54,7 +56,10 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
     const partesModelo: Part[] = [];
     const llamadas: { id: string; name: string; args: unknown }[] = [];
 
+    let uso: { entrada: number; salida: number; razonamiento: number } | null = null;
     for await (const chunk of stream) {
+      const m = chunk.usageMetadata;
+      if (m) uso = { entrada: m.promptTokenCount ?? 0, salida: m.candidatesTokenCount ?? 0, razonamiento: m.thoughtsTokenCount ?? 0 };
       for (const parte of chunk.candidates?.[0]?.content?.parts ?? []) {
         partesModelo.push(parte);
         if (parte.functionCall?.name) {
@@ -70,6 +75,7 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
       }
     }
 
+    if (uso) onUso?.(uso);
     if (llamadas.length === 0) break;
 
     contents.push({ role: "model", parts: partesModelo });

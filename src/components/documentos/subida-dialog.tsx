@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SelectNativo } from "@/components/ui/select-nativo";
+import { SelectCampo } from "@/components/ui/select-campo";
 import { Textarea } from "@/components/ui/textarea";
 import { FileKindIcon } from "@/components/documents/file-kind";
 import { useSubidaDocumento } from "@/hooks/use-subida-documento";
@@ -96,7 +96,7 @@ export function SubidaDialog({ open, onOpenChange, onSubido, tipoInicial = "gene
               <Input id="titulo-doc" value={s.titulo} onChange={(e) => s.setTitulo(e.target.value)} required />
             </Campo>
             <Campo id="tipo-doc" etiqueta="Tipo de documento">
-              <SelectNativo id="tipo-doc" value={s.tipo} opciones={OPCIONES_TIPO_DOC} onChange={s.setTipo} />
+              <SelectCampo id="tipo-doc" value={s.tipo} opciones={OPCIONES_TIPO_DOC} onChange={s.setTipo} />
             </Campo>
             <Campo id="edificio-doc" etiqueta="Edificio (opcional)" ayuda="Referencia E-00001 o dirección">
               <Input id="edificio-doc" value={s.edificioRef} onChange={(e) => s.setEdificioRef(e.target.value)} placeholder="E-00001" />

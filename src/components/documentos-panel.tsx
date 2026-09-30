@@ -6,7 +6,7 @@ import { FileSearchIcon, Loader2Icon, SearchIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SelectNativo } from "@/components/ui/select-nativo";
+import { SelectCampo } from "@/components/ui/select-campo";
 import { DocumentsEmpty } from "@/components/documents/documents-empty";
 import { ResultadosBusqueda } from "@/components/documentos/resultados-busqueda";
 import { SubidaDialog } from "@/components/documentos/subida-dialog";
@@ -48,7 +48,7 @@ export function DocumentosPanel() {
             className="pl-8"
           />
         </div>
-        <SelectNativo aria-label="Tipo de documento" className="w-52" value={d.tipo} placeholder="Todos los tipos" opciones={OPCIONES_TIPO_DOC} onChange={d.setTipo} />
+        <SelectCampo aria-label="Tipo de documento" className="w-52" value={d.tipo} placeholder="Todos los tipos" opciones={OPCIONES_TIPO_DOC} onChange={d.setTipo} />
         <Button variant="outline" size="sm" disabled={!d.titulo.trim() || d.buscando} onClick={() => void d.buscarContenido(d.titulo)}>
           {d.buscando ? <Loader2Icon className="mr-1.5 size-3.5 animate-spin" /> : <FileSearchIcon className="mr-1.5 size-3.5" />}
           Buscar en el contenido

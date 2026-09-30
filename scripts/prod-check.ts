@@ -41,7 +41,7 @@ async function main() {
   const { id } = await crearExtraccion(supabaseDb(), repo, sub.documento_id);
   const e = await estadoLector(supabaseDb(), repo, id);
   const leidos = e.campos.filter((c) => e.datos[c.clave]?.encontrado).length;
-  console.log(`Documento ${sub.documento_id}, extracción ${id}: ${leidos}/${e.campos.length} campos · unidad sugerida ${e.sugerencias?.unidadSugerida} · inquilino sugerido ${e.sugerencias?.inquilinoSugerido} · URL PDF ${e.archivo_url ? "n/a aquí" : "n/a"}`);
+  console.log(`Documento ${sub.documento_id}, extracción ${id}: ${leidos}/${e.campos.length} campos · unidad sugerida ${e.sugerencias?.unidadSugerida} · inquilino sugerido ${e.sugerencias?.inquilinoSugerido}`);
   console.log(`Abrir en la app: /dashboard/lector/${id}`);
 }
 

@@ -5,7 +5,7 @@ import { CheckCircle2Icon } from "lucide-react";
 import { AlertaItem } from "@/components/alertas/alerta-item";
 import { CargandoBloques, ErrorCarga } from "@/components/panel/estado-carga";
 import { FichaSheet } from "@/components/propiedades/ficha-sheet";
-import { SelectNativo } from "@/components/ui/select-nativo";
+import { SelectCampo } from "@/components/ui/select-campo";
 import { useAlertas } from "@/hooks/use-alertas";
 import { OPCIONES_TIPO_ALERTA, tipoAlerta } from "@/lib/etiquetas";
 
@@ -16,8 +16,8 @@ export function AlertasPanel({ tipoInicial = "" }: { tipoInicial?: string }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <SelectNativo aria-label="Tipo de alerta" className="w-56" value={tipo} placeholder="Todos los tipos" opciones={OPCIONES_TIPO_ALERTA} onChange={setTipo} />
-        <SelectNativo
+        <SelectCampo aria-label="Tipo de alerta" className="w-56" value={tipo} placeholder="Todos los tipos" opciones={OPCIONES_TIPO_ALERTA} onChange={setTipo} />
+        <SelectCampo
           aria-label="Nivel"
           className="w-40"
           value={severidad}

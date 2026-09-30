@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SelectNativo } from "@/components/ui/select-nativo";
+import { SelectCampo } from "@/components/ui/select-campo";
 import type { EstadoCampo } from "@/lib/lector-form";
 import type { CampoCatalogo, DatoExtraido } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -35,9 +35,9 @@ function Entrada({ campo, valor, disabled, invalido, onCambiar, id }: Pick<Props
   const comun = { id, disabled, "aria-invalid": invalido || undefined, "aria-describedby": `${id}-ayuda` };
   switch (campo.tipo_dato) {
     case "opcion":
-      return <SelectNativo {...comun} value={String(valor ?? "")} placeholder="—" opciones={(campo.opciones ?? []).map((o) => [o, o.replace(/_/g, " ")] as const)} onChange={(v) => onCambiar(v || null)} />;
+      return <SelectCampo {...comun} value={String(valor ?? "")} placeholder="—" opciones={(campo.opciones ?? []).map((o) => [o, o.replace(/_/g, " ")] as const)} onChange={(v) => onCambiar(v || null)} />;
     case "booleano":
-      return <SelectNativo {...comun} value={valor === true ? "true" : valor === false ? "false" : ""} placeholder="—" opciones={[["true", "Sí"], ["false", "No"]]} onChange={(v) => onCambiar(v === "" ? null : v === "true")} />;
+      return <SelectCampo {...comun} value={valor === true ? "true" : valor === false ? "false" : ""} placeholder="—" opciones={[["true", "Sí"], ["false", "No"]]} onChange={(v) => onCambiar(v === "" ? null : v === "true")} />;
     case "fecha":
       return <Input {...comun} type="date" value={String(valor ?? "")} onChange={(e) => onCambiar(e.target.value || null)} />;
     case "numero":
