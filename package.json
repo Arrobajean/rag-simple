@@ -17,7 +17,8 @@
     "lector:test": "tsx scripts/lector-test.ts",
     "postinstall": "node scripts/copy-pdf-worker.mjs",
     "seed:embeddings": "tsx scripts/seed-embeddings.ts",
-    "seed:all": "pnpm seed && pnpm seed:embeddings && pnpm seed:docs"
+    "seed:all": "pnpm seed && pnpm seed:embeddings && pnpm seed:docs",
+    "prod:check": "tsx scripts/prod-check.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
