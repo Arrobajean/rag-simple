@@ -7,11 +7,16 @@ import { getSesion, logout } from "@/lib/api";
 export function useSesion() {
   const router = useRouter();
   const [rol, setRol] = React.useState<"gestor" | "admin" | null>(null);
+  const [abierto, setAbierto] = React.useState(true);
 
   React.useEffect(() => {
     let cancelado = false;
     getSesion()
-      .then((s) => !cancelado && setRol(s.rol))
+      .then((s) => {
+        if (cancelado) return;
+        setRol(s.rol);
+        setAbierto(s.abierto);
+      })
       .catch(() => undefined);
     return () => {
       cancelado = true;
@@ -24,5 +29,5 @@ export function useSesion() {
     router.refresh();
   }, [router]);
 
-  return { rol, esAdmin: rol === "admin", salir };
+  return { rol, abierto, esAdmin: rol === "admin", salir };
 }

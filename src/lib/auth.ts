@@ -22,12 +22,11 @@ export function accesoConfigurado(): boolean {
 }
 
 /**
- * Acceso sin contraseña (rol admin para todos). Solo en desarrollo sin contraseñas configuradas, o en cualquier
- * entorno si se activa a propósito con APP_OPEN=true. Con APP_OPEN cualquiera con la URL puede ver y borrar datos.
+ * Acceso abierto (rol admin para todos) por defecto: cualquiera con la URL puede ver y borrar datos.
+ * Para exigir contraseña, define APP_REQUIRE_LOGIN=true junto con APP_PASSWORD / APP_ADMIN_PASSWORD.
  */
 export function accesoAbierto(): boolean {
-  if (process.env.APP_OPEN === "true") return true;
-  return process.env.NODE_ENV !== "production" && !accesoConfigurado();
+  return process.env.APP_REQUIRE_LOGIN !== "true";
 }
 
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

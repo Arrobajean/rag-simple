@@ -45,7 +45,7 @@ pnpm lector:test                                 # lee los 3 PDFs de prueba y co
 
 ## Seguridad
 
-- Toda la app y la API exigen sesión (`APP_PASSWORD` / `APP_ADMIN_PASSWORD`); en producción, sin contraseñas configuradas, **nada es accesible**.
+- **La app está abierta por defecto** (sin login): cualquiera con la URL puede ver y borrar datos. Para exigir contraseña define `APP_REQUIRE_LOGIN=true`, `APP_PASSWORD` y `APP_ADMIN_PASSWORD`.
 - La clave `service_role` solo se usa en el servidor. Las tablas tienen RLS activado sin políticas y las funciones no son ejecutables con la clave pública.
 - Los campos nuevos los aprueba un administrador y siempre entran como atributos tipados, nunca como columnas.
 - Los datos de inquilinos son **ficticios**. Antes de usar datos reales: plan de pago de Gemini (la capa gratuita puede usar los datos para entrenar) y autenticación por usuario con políticas RLS.
