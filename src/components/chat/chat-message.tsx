@@ -49,8 +49,8 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
 
   return (
     <motion.div {...animacion} className="space-y-3">
-      {pasos.length > 0 && <ToolSteps pasos={pasos} />}
-      {fase && <ChatThinking fase={fase} />}
+      {pasos.length > 0 && <ToolSteps pasos={pasos} enCurso={!!message.enCurso} />}
+      {fase && pasos.length === 0 && <ChatThinking fase={fase} />}
       {message.content && <CitedMarkdown text={message.content} fuentes={message.fuentes} />}
       {resultados.length > 0 && (
         <div className="space-y-2">

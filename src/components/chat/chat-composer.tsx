@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ContextMeter } from "@/components/chat/context-meter";
+import { NOMBRE_ASISTENTE } from "@/lib/asistente";
 import type { ContextoChat } from "@/lib/chat-contexto";
 import { cn } from "@/lib/utils";
 
@@ -97,7 +98,7 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
           if (e.key === "Escape" && loading) onStop();
         }}
         rows={1}
-        placeholder="Pregunta por propiedades, contratos, cobros o documentos"
+        placeholder={`Pregunta a ${NOMBRE_ASISTENTE}`}
         aria-label="Escribe tu pregunta"
         className="block max-h-[200px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70"
       />
