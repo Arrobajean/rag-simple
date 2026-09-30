@@ -21,8 +21,12 @@ export function accesoConfigurado(): boolean {
   return !!(process.env.APP_PASSWORD || process.env.APP_ADMIN_PASSWORD);
 }
 
-/** En desarrollo sin contraseñas configuradas el acceso queda abierto (con rol admin). */
+/**
+ * Acceso sin contraseña (rol admin para todos). Solo en desarrollo sin contraseñas configuradas, o en cualquier
+ * entorno si se activa a propósito con APP_OPEN=true. Con APP_OPEN cualquiera con la URL puede ver y borrar datos.
+ */
 export function accesoAbierto(): boolean {
+  if (process.env.APP_OPEN === "true") return true;
   return process.env.NODE_ENV !== "production" && !accesoConfigurado();
 }
 
