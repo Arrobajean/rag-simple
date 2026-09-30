@@ -1,135 +1,59 @@
-# rag-simple
+# Gestión inmobiliaria con IA (Next.js 16 + Supabase + Gemini)
 
-Sistema RAG (*Retrieval-Augmented Generation*) completo y moderno con **doble interfaz**:
-1. **Interfaz Web / Dashboard**: Desarrollada en **Next.js 16**, **Tailwind CSS v4** y componentes de **shadcn/ui** (`dashboard-01`), lista para desplegar en **Vercel**.
-2. **Scripts CLI en Python**: Herramientas en consola para indexación y consultas directas sin dependencias pesadas (sin LangChain ni LlamaIndex).
+Asistente para agencias inmobiliarias de la Comunidad de Madrid. El chat **cuenta y filtra con SQL** y **lee documentos con búsqueda semántica**; un **lector de contratos** extrae los datos de un PDF para que el agente los verifique antes de guardarlos.
 
-Ambas interfaces utilizan la misma base de conocimiento: **Supabase (pgvector)** como base de datos vectorial y la API oficial de **Google Gemini** para embeddings (`gemini-embedding-001`, 768 dims) y respuestas (`gemini-flash-latest`).
+## Qué incluye
 
----
+| Área | Descripción |
+|---|---|
+| **Asistente** | Function calling de Gemini con herramientas SQL parametrizadas (nunca SQL libre), búsqueda híbrida en documentos (vectorial + texto) con citas `[F1]`, streaming y transparencia de las consultas hechas. |
+| **Propiedades** | Explorador con filtros y ficha (contrato, inquilino, cobros, documentos, clientes interesados). |
+| **Alertas** | Vencimientos, actualización de renta, certificados, fianzas e impagos, calculados en vivo. |
+| **Clientes** | Cruce demanda ↔ oferta con puntuación. |
+| **Documentos** | PDF/MD/TXT en Storage privado, OCR de escaneos, troceado por cláusulas, versiones y vigencia. |
+| **Lector de contratos** | PDF a la izquierda, datos a la derecha con confianza y cita; borrador aislado, catálogo cerrado de campos, comparación con la BD, revisor de cláusulas y auditoría. |
 
-## 🏗 Arquitectura y Flujo
+## Puesta en marcha
 
-```
-[ Documentos (.md, .txt, .pdf) ]
-        │
-        ├──► (Web UI: /api/documents) ──┐
-        └──► (CLI: python ingest.py)   │
-                                       ▼ (gemini-embedding-001)
-                              [ Embeddings 768d ]
-                                       │
-                                       ▼
-                             [ Supabase (pgvector) ]
-                                       ▲
-                                       │ Búsqueda por similitud coseno (match_documents)
-                                       │
-      [ Pregunta del usuario ] ────────┘
-                 │
-                 ▼ (gemini-flash-latest)
-       [ Respuesta con citas de fuentes ]
-```
-
----
-
-## 🌐 1. Interfaz Web (Next.js + shadcn/ui)
-
-### Características del Dashboard
-- **Chat RAG interactivo**: Mensajería en tiempo real con recuperación semántica, visor de fragmentos de contexto y porcentaje de similitud.
-- **Gestión de Documentos**: Visualización de fuentes indexadas en Supabase, vista previa de fragmentos, subida de nuevos documentos y eliminación directa.
-- **Métricas del Vector Store**: Tarjetas con conteo de documentos, vectores almacenados y modelos utilizados.
-
-### Ejecución Local
-
-```powershell
-# Instalar dependencias
+```bash
 pnpm install
+cp .env.example .env        # rellena las claves
 
-# Iniciar servidor de desarrollo
+# 1. Esquema: pega supabase/all-migrations.sql en el SQL Editor de Supabase
+pnpm db:bundle              # genera ese archivo   (o `pnpm db:migrate` con SUPABASE_DB_URL)
+
+# 2. Datos de demostración (ficticios): ~1.300 propiedades, ~1.200 inquilinos, ~16.000 pagos
+pnpm seed
+pnpm seed:embeddings        # embeddings de descripciones y notas de clientes
+pnpm seed:docs              # 79 documentos (contratos, normas, actas…) + contratos de prueba para el lector
+
 pnpm dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+Los PDF de prueba del lector quedan en `seed-output/pdfs/prueba-lector/` (uno con inquilino nuevo, uno con inquilino ya existente y uno escaneado).
 
-### Despliegue en Vercel 🚀
+## Pruebas locales sin tocar Supabase
 
-1. Entra a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta de GitHub.
-2. Haz clic en **Add New...** → **Project** e importa el repositorio `rag-simple`.
-3. Vercel detectará automáticamente **Next.js** en la raíz.
-4. En **Environment Variables**, añade las 4 variables de tu `.env`:
-   - `GEMINI_API_KEY`: Tu clave de Google AI Studio.
-   - `SUPABASE_URL`: `https://xxxxxxxx.supabase.co`.
-   - `SUPABASE_KEY`: Tu clave secreta `service_role`.
-   - `GEMINI_CHAT_MODEL`: `gemini-flash-latest`.
-5. Haz clic en **Deploy**. ¡Listo!
+Las migraciones, el seed y el agente se prueban contra un Postgres en memoria (PGlite):
 
----
-
-## 🐍 2. Scripts CLI en Python
-
-Si prefieres trabajar desde la terminal:
-
-### Preparar entorno virtual
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
+```bash
+pnpm db:check                                    # aplica las migraciones
+pnpm seed:test                                   # carga el seed y comprueba coherencia
+pnpm agent:test -- --docs "¿Se permiten mascotas en Calle de Toledo 45?"
+pnpm lector:test                                 # lee los 3 PDFs de prueba y confirma
 ```
 
-### Indexar documentos
-Coloca tus archivos en [`docs/`](docs/) y ejecuta:
-```powershell
-python ingest.py
-```
+## Seguridad
 
-### Consultar al RAG
-```powershell
-# Pregunta directa:
-python ask.py "¿Cuántos días de vacaciones tengo?"
+- Toda la app y la API exigen sesión (`APP_PASSWORD` / `APP_ADMIN_PASSWORD`); en producción, sin contraseñas configuradas, **nada es accesible**.
+- La clave `service_role` solo se usa en el servidor. Las tablas tienen RLS activado sin políticas y las funciones no son ejecutables con la clave pública.
+- Los campos nuevos los aprueba un administrador y siempre entran como atributos tipados, nunca como columnas.
+- Los datos de inquilinos son **ficticios**. Antes de usar datos reales: plan de pago de Gemini (la capa gratuita puede usar los datos para entrenar) y autenticación por usuario con políticas RLS.
 
-# O modo chat interactivo:
-python ask.py
-```
+## Gemini y cuota
 
----
+Modelo por defecto: `gemini-flash-lite-latest`. Cada pregunta del chat hace 2-4 llamadas. La capa gratuita tiene topes diarios muy bajos; si se agotan, el sistema pasa a `GEMINI_FALLBACK_MODELS`. Para uso real, activa la facturación.
 
-## ⚙️ Configuración Inicial de Base de Datos (Supabase)
+## Aviso legal
 
-1. En tu proyecto de Supabase, abre el **SQL Editor**.
-2. Ejecuta el archivo [`schema.sql`](schema.sql) para crear:
-   - La extensión `vector` (pgvector).
-   - La tabla `documents` con índice HNSW.
-   - La función `match_documents` para búsqueda por similitud de coseno.
-
----
-
-## 📂 Estructura del Proyecto
-
-```
-rag-simple/
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── chat/route.ts       # Endpoint de chat RAG con Gemini
-│   │   │   └── documents/route.ts  # Endpoint para listar/subir/eliminar documentos
-│   │   ├── dashboard/page.tsx      # Dashboard con componentes shadcn
-│   │   ├── layout.tsx              # RootLayout con Sonner y TooltipProvider
-│   │   └── page.tsx                # Página principal (renderiza Dashboard)
-│   ├── components/
-│   │   ├── ui/                     # Componentes shadcn (Card, Badge, Button, etc.)
-│   │   ├── app-sidebar.tsx         # Sidebar de navegación
-│   │   ├── rag-chat.tsx            # Chat RAG interactivo con citas
-│   │   ├── rag-documents.tsx       # Gestor y subida de documentos
-│   │   ├── section-cards.tsx       # Tarjetas de métricas RAG
-│   │   └── site-header.tsx         # Cabecera con breadcrumb y estado
-│   └── lib/
-│       ├── rag.ts                  # Cliente Supabase & Gemini para Node.js
-│       └── utils.ts                # Utilidades de shadcn (cn)
-├── docs/                           # Documentos locales (.md, .txt, .pdf)
-├── ask.py                          # CLI de consulta en Python
-├── ingest.py                       # CLI de indexación en Python
-├── rag.py                          # Módulo RAG central de Python
-├── schema.sql                      # Script SQL para Supabase pgvector
-├── components.json                 # Configuración de shadcn/ui
-├── package.json                    # Dependencias Node.js (Next 16, Tailwind 4)
-└── requirements.txt                # Dependencias Python
-```
+Las respuestas y el revisor de cláusulas sobre LAU/Ley 12/2023 son **orientativos**, no asesoramiento jurídico.

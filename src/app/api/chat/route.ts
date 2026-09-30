@@ -1,80 +1,52 @@
-import { NextResponse } from "next/server";
-import { CHAT_MODEL, embedTexts, getGeminiClient, getSupabaseClient } from "@/lib/rag";
+import { describeError } from "@/lib/rag";
+import { ejecutarAgente } from "@/lib/chat/agent";
+import { supabaseData } from "@/lib/chat/data";
+import type { ChatEvent, MensajeEntrada } from "@/lib/chat/types";
 
-const SYSTEM_PROMPT = `Responde en español usando SOLO el contexto proporcionado.
-Si la respuesta no está en el contexto, dilo claramente.
-Cita la fuente entre corchetes, por ejemplo [archivo.md].`;
+export const maxDuration = 120;
 
-export async function POST(req: Request) {
-  try {
-    const { question } = await req.json();
-    if (!question || typeof question !== "string") {
-      return NextResponse.json({ error: "Pregunta no proporcionada" }, { status: 400 });
-    }
-
-    const [queryVec] = await embedTexts([question], "RETRIEVAL_QUERY");
-    if (!queryVec) {
-      return NextResponse.json({ error: "No se pudo generar embedding para la pregunta" }, { status: 500 });
-    }
-
-    const supabase = getSupabaseClient();
-    const { data: matches, error: rpcError } = await supabase.rpc("match_documents", {
-      query_embedding: queryVec,
-      match_count: 5,
-    });
-
-    if (rpcError) {
-      console.error("Error en match_documents:", rpcError);
-      return NextResponse.json({ error: `Error en base de datos: ${rpcError.message}` }, { status: 500 });
-    }
-
-    interface MatchItem {
-      id: number;
-      source: string;
-      content: string;
-      similarity: number;
-    }
-
-    const formattedMatches: MatchItem[] = ((matches as Array<{ id: number; source: string; content: string; similarity: number }>) || []).map((m) => ({
-      id: m.id,
-      source: m.source,
-      content: m.content,
-      similarity: Number((m.similarity ?? 0).toFixed(4)),
-    }));
-
-    const context = formattedMatches.map((m) => `[${m.source}]\n${m.content}`).join("\n\n");
-
-    const gemini = getGeminiClient();
-
-    let answer = "";
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const resp = await gemini.models.generateContent({
-          model: CHAT_MODEL,
-          contents: `Contexto:\n${context}\n\nPregunta: ${question}`,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-          },
-        });
-        answer = resp.text || "No se obtuvo respuesta del modelo.";
-        break;
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        if (errorMsg.includes("503") && attempt < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          continue;
-        }
-        throw err;
-      }
-    }
-
-    return NextResponse.json({
-      answer,
-      matches: formattedMatches,
-    });
-  } catch (error: unknown) {
-    const errorMsg = error instanceof Error ? error.message : "Error procesando la consulta";
-    console.error("Error en /api/chat:", error);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+function mensajesDe(body: unknown): MensajeEntrada[] | null {
+  const b = body as { messages?: unknown; question?: unknown };
+  if (Array.isArray(b?.messages)) {
+    const valid = b.messages.filter(
+      (m): m is MensajeEntrada =>
+        !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim() !== ""
+    );
+    return valid.length && valid[valid.length - 1].role === "user" ? valid : null;
   }
+  if (typeof b?.question === "string" && b.question.trim()) return [{ role: "user", content: b.question }];
+  return null;
+}
+
+/** Respuesta en NDJSON: un evento JSON por línea (texto, herramientas usadas, fuentes…). */
+export async function POST(req: Request) {
+  const mensajes = mensajesDe(await req.json().catch(() => null));
+  if (!mensajes) {
+    return Response.json({ error: "Envía al menos un mensaje del usuario" }, { status: 400 });
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const emit = (e: ChatEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(e)}\n`));
+      try {
+        await ejecutarAgente({ mensajes, data: supabaseData(), onEvent: emit, signal: req.signal });
+        emit({ type: "done" });
+      } catch (error: unknown) {
+        console.error("Error en /api/chat:", error);
+        const { message, status } = describeError(error, "Error procesando la consulta");
+        emit({ type: "error", message, status });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
