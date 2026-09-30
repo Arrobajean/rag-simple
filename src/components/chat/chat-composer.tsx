@@ -100,7 +100,7 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
         rows={1}
         placeholder={`Pregunta a ${NOMBRE_ASISTENTE}`}
         aria-label="Escribe tu pregunta"
-        className="block max-h-[200px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70"
+        className="block max-h-[200px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-base leading-6 md:text-[15px] outline-none placeholder:text-muted-foreground/70"
       />
 
       <div className="flex items-center gap-2">

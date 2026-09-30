@@ -25,7 +25,7 @@ function Accion({ etiqueta, activo, onClick, children }: { etiqueta: string; act
             aria-label={etiqueta}
             aria-pressed={activo}
             whileTap={{ scale: 0.85 }}
-            className={cn("flex size-8 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", activo && "text-foreground")}
+            className={cn("flex size-9 items-center justify-center rounded-full md:size-8 text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring", activo && "text-foreground")}
           />
         }
       >
@@ -101,7 +101,7 @@ export function MensajeAcciones({ texto, onReintentar, onVoto }: Props) {
               void enviarNegativo(true);
             }}
           >
-            <div className="flex items-center gap-2 rounded-2xl border bg-muted/40 py-1.5 pr-1.5 pl-3">
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 rounded-2xl border bg-muted/40 py-1.5 pr-1.5 pl-3">
               <input
                 value={comentario}
                 onChange={(e) => setComentario(e.target.value)}
@@ -109,7 +109,7 @@ export function MensajeAcciones({ texto, onReintentar, onVoto }: Props) {
                 autoFocus
                 aria-label="¿Qué ha fallado? (opcional)"
                 placeholder="¿Qué ha fallado? (opcional)"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+                className="min-w-[60%] flex-1 bg-transparent text-base outline-none md:text-sm placeholder:text-muted-foreground/70"
               />
               <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => void enviarNegativo(false)}>
                 Omitir

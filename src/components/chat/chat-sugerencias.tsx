@@ -26,7 +26,7 @@ export function ChatSugerencias({ onElegir }: { onElegir: (pregunta: string) => 
             <button
               type="button"
               onClick={() => onElegir(s)}
-              className="rounded-full border bg-background px-3.5 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="rounded-full border bg-background px-3 py-1.5 text-left text-xs sm:px-3.5 sm:text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {s}
             </button>

@@ -33,7 +33,7 @@ export function RagChat() {
     <div className="relative flex min-h-0 flex-1 flex-col">
       {/* Único scroll de la pantalla: los mensajes. El campo de texto queda fijo abajo. */}
       <div ref={ref} onScroll={alScroll} className={vacio ? "hidden" : "min-h-0 flex-1 overflow-y-auto scroll-smooth"}>
-        <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pt-6 pb-8">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-3 pt-4 pb-6 sm:space-y-8 sm:px-4 sm:pt-6 sm:pb-8">
           {messages.map((m, idx) => (
             <ChatMessage
               key={m.id}
@@ -67,7 +67,7 @@ export function RagChat() {
 
       {/* Sin mensajes el campo se centra; al enviar el primero baja a su sitio con una transición suave. */}
       {/* layout="position" mueve el bloque sin deformarlo (con `layout` a secas el contenido se estira durante la animación) */}
-      <div className={vacio ? "flex flex-1 flex-col justify-center px-4 pb-16" : "shrink-0 px-4 pb-3"}>
+      <div className={vacio ? "flex flex-1 flex-col justify-center px-3 pb-10 sm:px-4 sm:pb-16" : "shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"}>
         <motion.div layout="position" transition={{ type: "spring", bounce: 0, duration: 0.5 }} className="mx-auto w-full max-w-3xl">
           <AnimatePresence initial={false}>{vacio && <ChatSugerencias key="sugerencias" onElegir={send} />}</AnimatePresence>
           <ChatComposer loading={loading} hayConversacion={!vacio} contexto={contexto} onSend={send} onStop={stop} onNueva={clear} onCopiar={copiar} onDescargar={descargar} />

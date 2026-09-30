@@ -42,7 +42,7 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
   if (esUsuario) {
     return (
       <motion.div {...animacion} className="flex justify-end">
-        <p className="max-w-[85%] rounded-3xl bg-muted px-4 py-2.5 text-[15px] leading-6 whitespace-pre-wrap">{message.content}</p>
+        <p className="max-w-[85%] break-words rounded-3xl bg-muted px-4 py-2.5 text-[15px] leading-6 whitespace-pre-wrap">{message.content}</p>
       </motion.div>
     );
   }
@@ -50,7 +50,7 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
   return (
     <motion.div {...animacion} className="space-y-3">
       {pasos.length > 0 && <ToolSteps pasos={pasos} enCurso={!!message.enCurso} />}
-      {fase && pasos.length === 0 && <ChatThinking fase={fase} />}
+      {fase && pasos.length === 0 && <ChatThinking />}
       {message.content && <CitedMarkdown text={message.content} fuentes={message.fuentes} />}
       {resultados.length > 0 && (
         <div className="space-y-2">

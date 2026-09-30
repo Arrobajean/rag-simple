@@ -58,7 +58,7 @@ export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: 
   );
 
   return (
-    <div className="text-sm">
+    <div className="text-sm break-words">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} urlTransform={(u) => (u.startsWith("cita:") ? u : u)}>
         {contenido}
       </ReactMarkdown>
