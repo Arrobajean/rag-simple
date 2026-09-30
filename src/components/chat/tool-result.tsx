@@ -21,20 +21,20 @@ function Barras({ p }: { p: Extract<Presentacion, { tipo: "barras" }> }) {
 function Tabla({ p }: { p: Extract<Presentacion, { tipo: "tabla" }> }) {
   if (p.filas.length === 0) return <p className="text-xs text-muted-foreground">Sin resultados.</p>;
   return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-xs">
+    <div className="-ml-6 overflow-x-auto">
+      <table className="w-full border-separate border-spacing-x-6 text-sm">
         <thead>
-          <tr className="border-b bg-muted/50">
+          <tr>
             {p.columnas.map((c) => (
-              <th key={c.clave} className="whitespace-nowrap px-2 py-1.5 text-left font-medium">{c.etiqueta}</th>
+              <th key={c.clave} className="border-b border-foreground/15 py-2.5 text-left font-normal whitespace-nowrap text-muted-foreground">{c.etiqueta}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {p.filas.map((f, i) => (
-            <tr key={i} className="border-b last:border-b-0">
+            <tr key={i}>
               {p.columnas.map((c) => (
-                <td key={c.clave} className={`px-2 py-1.5 ${c.formato === "moneda" || c.formato === "numero" ? "tabular-nums text-right" : ""}`}>
+                <td key={c.clave} className={`border-b border-foreground/15 py-3 align-top first:font-semibold ${c.formato === "moneda" || c.formato === "numero" ? "tabular-nums text-right" : ""}`}>
                   {celda(f[c.clave], c.formato)}
                 </td>
               ))}
@@ -43,7 +43,7 @@ function Tabla({ p }: { p: Extract<Presentacion, { tipo: "tabla" }> }) {
         </tbody>
       </table>
       {p.total !== undefined && p.total > p.filas.length && (
-        <p className="border-t bg-muted/30 px-2 py-1 text-[11px] text-muted-foreground">
+        <p className="ml-6 pt-2 text-xs text-muted-foreground">
           Mostrando {p.filas.length} de {p.total}
         </p>
       )}
@@ -54,8 +54,8 @@ function Tabla({ p }: { p: Extract<Presentacion, { tipo: "tabla" }> }) {
 /** Resultado de una consulta a la base de datos: tabla o barras, con título. */
 export function ToolResult({ presentacion }: { presentacion: Presentacion }) {
   return (
-    <figure className="space-y-1.5 rounded-lg border bg-card p-3">
-      <figcaption className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{presentacion.titulo}</figcaption>
+    <figure className="space-y-2">
+      <figcaption className="text-lg font-medium tracking-tight">{presentacion.titulo}</figcaption>
       {presentacion.tipo === "barras" ? <Barras p={presentacion} /> : <Tabla p={presentacion} />}
     </figure>
   );
