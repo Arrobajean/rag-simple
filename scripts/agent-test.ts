@@ -56,6 +56,7 @@ async function main() {
       if (e.type === "tool_start") console.log(`  ▶ ${e.descripcion}`);
       if (e.type === "tool_end") console.log(`    ${e.ok ? "✔" : "✘"} ${e.resumen}`);
       if (e.type === "text") texto += e.delta;
+      if (e.type === "accion") console.log(`  ⚑ ACCIÓN PROPUESTA (${e.accion.tipo}): ${e.accion.resumen}`);
     };
     try {
       await ejecutarAgente({ mensajes: [{ role: "user", content: pregunta }], data, onEvent });

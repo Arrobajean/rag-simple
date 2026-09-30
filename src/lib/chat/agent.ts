@@ -3,7 +3,7 @@ import { chatModel, conModelos, getGeminiClient } from "@/lib/rag";
 import type { DataAccess } from "./data";
 import { systemPrompt } from "./prompt";
 import { declaraciones, describirLlamada, ejecutarHerramienta, type ContextoHerramientas } from "./tools";
-import type { ChatEvent, FuenteDocumento, MensajeEntrada } from "./types";
+import type { ChatEvent, FuenteDocumento, MensajeEntrada, PropuestaAccion } from "./types";
 
 const MAX_ITERACIONES = 6;
 const MAX_HISTORIAL = 14;
@@ -26,7 +26,8 @@ export interface OpcionesAgente {
 export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, hoy, onUso }: OpcionesAgente): Promise<string> {
   const client = getGeminiClient();
   const fuentes: FuenteDocumento[] = [];
-  const ctx: ContextoHerramientas = { data, fuentes, embed };
+  const acciones: PropuestaAccion[] = [];
+  const ctx: ContextoHerramientas = { data, fuentes, acciones, embed };
 
   const contents: Content[] = mensajes.slice(-MAX_HISTORIAL).map((m) => ({
     role: m.role === "user" ? "user" : "model",
@@ -35,6 +36,7 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
 
   let respuesta = "";
   let fuentesEmitidas = 0;
+  let accionesEmitidas = 0;
 
   for (let iter = 0; iter < MAX_ITERACIONES; iter++) {
     if (signal?.aborted) break;
@@ -97,6 +99,9 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
       onEvent({ type: "sources", fuentes: fuentes.slice() });
       fuentesEmitidas = fuentes.length;
     }
+
+    for (const a of acciones.slice(accionesEmitidas)) onEvent({ type: "accion", accion: a });
+    accionesEmitidas = acciones.length;
 
     contents.push({
       role: "user",

@@ -1,4 +1,4 @@
-import type { EjecucionHerramienta, FuenteDocumento } from "@/lib/chat/types";
+import type { AccionUI, EjecucionHerramienta, FuenteDocumento } from "@/lib/chat/types";
 import type { CampoCatalogo, DatosExtraidos } from "@/lib/lector/catalogo";
 import type { Comparacion, ContextoLector, CandidatoInquilino, CandidatoUnidad } from "@/lib/lector/resolver";
 import type { Hallazgo, Valores } from "@/lib/lector/revisor";
@@ -15,6 +15,7 @@ export interface ChatMessage {
   timestamp: string;
   herramientas?: EjecucionHerramienta[];
   fuentes?: FuenteDocumento[];
+  acciones?: AccionUI[];
   /** El mensaje se está recibiendo por streaming. */
   enCurso?: boolean;
   error?: boolean;
@@ -254,4 +255,34 @@ export interface HealthReport {
   services: ServiceHealth[];
   model: string;
   checkedAt: string;
+}
+
+// ── Valoraciones de respuestas (vista de administración) ────────────────────────────────────────
+export interface Valoracion {
+  id: number;
+  voto: "up" | "down";
+  pregunta: string;
+  respuesta: string;
+  herramientas: { nombre: string; descripcion: string; resumen?: string }[];
+  fuentes: number;
+  modelo: string | null;
+  comentario: string | null;
+  usuario: string | null;
+  created_at: string;
+}
+
+export interface ResumenValoraciones {
+  total: number;
+  utiles: number;
+  mejorables: number;
+  con_comentario: number;
+}
+
+export interface RegistroAccion {
+  id: number;
+  usuario: string | null;
+  tabla: string;
+  registro_id: number | null;
+  valor_nuevo: { tipo?: string; resumen?: string } | null;
+  created_at: string;
 }

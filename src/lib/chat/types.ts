@@ -40,6 +40,7 @@ export type ChatEvent =
   | { type: "tool_end"; id: string; ok: boolean; resumen: string; presentacion?: Presentacion }
   | { type: "sources"; fuentes: FuenteDocumento[] }
   /** Tokens de una llamada al modelo: `entrada` es todo el contexto enviado en esa llamada. */
+  | { type: "accion"; accion: PropuestaAccion }
   | { type: "usage"; entrada: number; salida: number; razonamiento: number }
   | { type: "text"; delta: string }
   | { type: "done" }
@@ -52,3 +53,23 @@ export interface MensajeEntrada {
 
 /** Tamaño de la ventana de contexto del modelo (Gemini Flash-Lite: ~1 M de tokens de entrada). */
 export const VENTANA_CONTEXTO = 1_048_576;
+
+// ── Acciones de escritura (siempre con confirmación humana) ─────────────────────────────────────
+export const TIPOS_ACCION = ["crear_incidencia", "crear_cliente_demanda", "resolver_alerta", "cambiar_estado_unidad"] as const;
+export type TipoAccion = (typeof TIPOS_ACCION)[number];
+
+/** Lo que el asistente propone hacer. No se ejecuta hasta que una persona lo confirma. */
+export interface PropuestaAccion {
+  id: string;
+  tipo: TipoAccion;
+  /** Parámetros ya validados por la base de datos (mismas claves que espera rpc_accion). */
+  datos: Record<string, unknown>;
+  /** Descripción en español de lo que se hará, generada por la base de datos. */
+  resumen: string;
+}
+
+export interface AccionUI extends PropuestaAccion {
+  estado: "pendiente" | "ejecutando" | "hecha" | "cancelada" | "error";
+  resultado?: string;
+  error?: string;
+}

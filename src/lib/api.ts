@@ -2,7 +2,7 @@ import type { ChatEvent, MensajeEntrada } from "@/lib/chat/types";
 import type {
   Alerta, Cliente, Coincidencia, DatosSubida, Documento, EstadoLector, ExtraccionListada, FichaEdificio, FichaPropiedad,
   FiltrosPropiedades, FragmentoDocumento, HealthReport, ListaAlertas, ListaPropiedades, Resolucion, ResultadoBusqueda, Resumen,
-  SolicitudCampo, CampoCatalogo, Valores, Hallazgo,
+  SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion,
 } from "@/lib/types";
 
 // Cliente HTTP del frontend: única capa que conoce las rutas de /api.
@@ -60,6 +60,16 @@ export async function streamChat(messages: MensajeEntrada[], onEvent: (e: ChatEv
     }
   }
 }
+
+// ── Acciones del asistente y valoraciones ───────────────────────────────────────────────────────
+export const ejecutarAccionApi = (tipo: string, datos: Record<string, unknown>) =>
+  sendJson<{ resumen: string; tabla?: string; registro_id?: number | null }>("/api/acciones", { tipo, datos });
+
+export const enviarValoracion = (v: { voto: "up" | "down"; pregunta: string; respuesta: string; herramientas: { nombre: string; descripcion: string; resumen?: string }[]; fuentes: number; comentario?: string }) =>
+  sendJson<{ id: number }>("/api/chat/valoraciones", v);
+
+export const listarValoraciones = (f: { voto?: string; pagina?: number } = {}) =>
+  request<{ resumen: ResumenValoraciones; items: Valoracion[]; total: number; acciones: RegistroAccion[] }>(`/api/chat/valoraciones${query(f)}`);
 
 // ── Panel, propiedades, edificios ───────────────────────────────────────────────────────────────
 export const getResumen = () => request<Resumen>("/api/resumen");

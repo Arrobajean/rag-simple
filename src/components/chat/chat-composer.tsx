@@ -53,29 +53,11 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
   return (
     <div
       className={cn(
-        "group/composer rounded-[28px] border bg-muted/50 px-3 pt-2.5 pb-2 shadow-xs transition-all duration-200",
+        "group/composer flex items-end gap-1.5 rounded-[28px] border bg-muted/50 p-1.5 shadow-xs transition-all duration-200",
         "focus-within:border-foreground/20 focus-within:bg-muted/70 focus-within:shadow-md"
       )}
     >
-      <textarea
-        ref={area}
-        value={texto}
-        onChange={(e) => setTexto(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault();
-            enviar();
-          }
-          if (e.key === "Escape" && loading) onStop();
-        }}
-        rows={1}
-        placeholder="Pregunta por propiedades, contratos, cobros o documentos"
-        aria-label="Escribe tu pregunta"
-        className="block max-h-[200px] w-full resize-none bg-transparent px-2 py-1 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70"
-      />
-
-      <div className="mt-1 flex items-center justify-between">
-        <DropdownMenu>
+      <DropdownMenu>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -101,9 +83,26 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
               <DownloadIcon /> Descargar como Markdown
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+      </DropdownMenu>
 
-        <div className="flex items-center gap-2">
+      <textarea
+        ref={area}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            enviar();
+          }
+          if (e.key === "Escape" && loading) onStop();
+        }}
+        rows={1}
+        placeholder="Pregunta por propiedades, contratos, cobros o documentos"
+        aria-label="Escribe tu pregunta"
+        className="block max-h-[200px] min-w-0 flex-1 resize-none bg-transparent px-1 py-1.5 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70"
+      />
+
+      <div className="flex items-center gap-2">
           {contexto && contexto.llamadas > 0 && <ContextMeter contexto={contexto} />}
 
           <AnimatePresence mode="wait" initial={false}>
@@ -141,7 +140,6 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
               </motion.button>
             )}
           </AnimatePresence>
-        </div>
       </div>
     </div>
   );

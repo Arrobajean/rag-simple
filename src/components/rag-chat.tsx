@@ -10,7 +10,7 @@ import { useRagChat } from "@/hooks/use-rag-chat";
 import { conversacionAMarkdown } from "@/lib/chat-export";
 
 export function RagChat() {
-  const { messages, loading, contexto, send, stop, questionFor, clear } = useRagChat();
+  const { messages, loading, contexto, send, stop, questionFor, clear, confirmarAccion, cancelarAccion, valorar } = useRagChat();
   const { ref, alScroll, mostrarBajar, bajar } = useAutoscroll<HTMLDivElement>(messages);
   const vacio = messages.length === 0;
 
@@ -39,7 +39,9 @@ export function RagChat() {
                 key={m.id}
                 message={m}
                 onRetry={pregunta && !loading ? () => send(pregunta) : undefined}
-                onVote={m.role === "assistant" && !m.error ? (v) => toast(v === "up" ? "Gracias por el feedback" : "Anotado, lo mejoraremos") : undefined}
+                onVote={m.role === "assistant" && !m.error ? (v, comentario) => valorar(m.id, v, comentario) : undefined}
+                onConfirmarAccion={(a) => void confirmarAccion(m.id, a)}
+                onCancelarAccion={(a) => cancelarAccion(m.id, a)}
               />
             );
           })}

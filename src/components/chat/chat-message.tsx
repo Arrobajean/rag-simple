@@ -7,20 +7,24 @@ import { MensajeAcciones } from "@/components/chat/mensaje-acciones";
 import { ToolSteps } from "@/components/chat/tool-steps";
 import { ToolResult } from "@/components/chat/tool-result";
 import { ChatThinking } from "@/components/chat/chat-thinking";
+import { AccionCard } from "@/components/chat/accion-card";
+import type { AccionUI } from "@/lib/chat/types";
 import { faseDelMensaje } from "@/lib/chat-fase";
 import type { ChatMessage as ChatMessageData } from "@/lib/types";
 
 interface ChatMessageProps {
   message: ChatMessageData;
   onRetry?: () => void;
-  onVote?: (vote: "up" | "down") => void;
+  onVote?: (vote: "up" | "down", comentario?: string) => Promise<boolean> | void;
+  onConfirmarAccion?: (a: AccionUI) => void;
+  onCancelarAccion?: (a: AccionUI) => void;
 }
 
 /**
  * Mensaje al estilo de los chats actuales: el usuario en una píldora a la derecha; el asistente sin burbuja,
  * a todo el ancho de la columna, con sus consultas, resultados, fuentes y acciones debajo.
  */
-export function ChatMessage({ message, onRetry, onVote }: ChatMessageProps) {
+export function ChatMessage({ message, onRetry, onVote, onConfirmarAccion, onCancelarAccion }: ChatMessageProps) {
   const reducir = useReducedMotion();
   const esUsuario = message.role === "user";
   const pasos = message.herramientas ?? [];
@@ -49,6 +53,9 @@ export function ChatMessage({ message, onRetry, onVote }: ChatMessageProps) {
         </div>
       )}
       {message.fuentes && message.fuentes.length > 0 && <MessageSources fuentes={message.fuentes} />}
+      {(message.acciones ?? []).map((a) => (
+        <AccionCard key={a.id} accion={a} onConfirmar={() => onConfirmarAccion?.(a)} onCancelar={() => onCancelarAccion?.(a)} />
+      ))}
       {!message.enCurso && message.content && <MensajeAcciones texto={message.content} onReintentar={onRetry} onVoto={onVote} />}
     </motion.div>
   );

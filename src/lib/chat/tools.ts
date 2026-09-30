@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { embedQuery, toVector } from "@/lib/rag";
 import type { DataAccess } from "./data";
-import type { FuenteDocumento, Presentacion } from "./types";
+import { AccionInputSchema, proponerAccion } from "@/lib/acciones";
+import type { FuenteDocumento, Presentacion, PropuestaAccion } from "./types";
 
 // ── Valores admitidos (coinciden con los enums de la base de datos) ─────────────────────────────────
 export const TIPOS_UNIDAD = ["piso", "atico", "duplex", "estudio", "chalet", "habitacion", "local", "oficina", "garaje", "trastero"] as const;
@@ -49,6 +50,8 @@ export interface ContextoHerramientas {
   data: DataAccess;
   /** Fragmentos recuperados en esta conversación; se numeran F1, F2… */
   fuentes: FuenteDocumento[];
+  /** Acciones de escritura propuestas en esta conversación: esperan la confirmación de una persona. */
+  acciones: PropuestaAccion[];
   /** Embedding de consultas (inyectable para tests). */
   embed?: (texto: string) => Promise<number[]>;
 }
@@ -477,6 +480,29 @@ export const HERRAMIENTAS: Herramienta[] = [
           ],
           filas: r,
         },
+      };
+    },
+  }),
+  definir({
+    nombre: "proponer_accion",
+    descripcion:
+      "PROPONE una modificación de datos; NO la ejecuta: el usuario la confirma o cancela en una tarjeta. Acciones: " +
+      "crear_incidencia (unidad_ref o edificio_ref, categoria, prioridad, descripcion), " +
+      "crear_cliente_demanda (nombre, tipo_cliente, operacion, presupuesto_max… o cliente_id para añadir otra demanda a un cliente existente), " +
+      "resolver_alerta (clave_alerta de alertas_pendientes; accion_alerta resolver o posponer), " +
+      "cambiar_estado_unidad (unidad_ref, estado disponible/reservada/reforma). " +
+      "Úsala SOLO cuando el usuario pida explícitamente crear o cambiar algo, con datos que él haya dado (no inventes teléfonos, importes ni referencias: pregunta lo que falte). " +
+      "Tras llamarla, di que queda pendiente de su confirmación; nunca digas que ya está hecho. Si devuelve error, corrige o pregunta al usuario. " +
+      "Los contratos no se crean desde aquí: se cargan con el lector de contratos.",
+    schema: AccionInputSchema,
+    describir: (a) => `Proponer acción · ${a.tipo.replace(/_/g, " ")}`,
+    async ejecutar(a, ctx) {
+      const r = await proponerAccion(ctx.data, a);
+      if (!r.ok) return { resultado: { error: r.error }, resumen: r.error.slice(0, 160) };
+      ctx.acciones.push(r.propuesta);
+      return {
+        resultado: { estado: "PENDIENTE_DE_CONFIRMACION", que_se_hara: r.propuesta.resumen, instruccion: "Pide al usuario que revise la tarjeta y la confirme. No afirmes que ya se ha hecho." },
+        resumen: "Pendiente de confirmación",
       };
     },
   }),

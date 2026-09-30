@@ -7,6 +7,8 @@ Asistente para agencias inmobiliarias de la Comunidad de Madrid. El chat **cuent
 | Área | Descripción |
 |---|---|
 | **Asistente** | Function calling de Gemini con herramientas SQL parametrizadas (nunca SQL libre), búsqueda híbrida en documentos (vectorial + texto) con citas `[F1]`, streaming y transparencia de las consultas hechas. |
+| **Acciones con confirmación** | El asistente propone abrir una incidencia, dar de alta un cliente con su demanda, resolver o posponer una alerta y cambiar el estado de una unidad; nada se ejecuta hasta que una persona pulsa «Confirmar». Queda en auditoría. |
+| **Valoraciones** | 👍/👎 bajo cada respuesta (con comentario opcional); el administrador las ve en «Valoraciones». |
 | **Propiedades** | Explorador con filtros y ficha (contrato, inquilino, cobros, documentos, clientes interesados). |
 | **Alertas** | Vencimientos, actualización de renta, certificados, fianzas e impagos, calculados en vivo. |
 | **Clientes** | Cruce demanda ↔ oferta con puntuación. |
