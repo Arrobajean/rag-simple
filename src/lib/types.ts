@@ -286,3 +286,11 @@ export interface RegistroAccion {
   valor_nuevo: { tipo?: string; resumen?: string } | null;
   created_at: string;
 }
+
+export interface RegistroBloqueo {
+  id: number;
+  motivo: "manipulacion" | "formato" | "fuera_de_alcance" | "demasiado_largo";
+  mensaje: string;
+  usuario: string | null;
+  created_at: string;
+}

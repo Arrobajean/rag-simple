@@ -49,13 +49,14 @@ export async function GET(req: Request) {
     let lista = sb.from("valoraciones_chat").select("*", { count: "exact" }).order("created_at", { ascending: false }).range((pagina - 1) * TAM, pagina * TAM - 1);
     if (voto === "up" || voto === "down") lista = lista.eq("voto", voto);
 
-    const [total, utiles, mejorables, conComentario, items, acciones] = await Promise.all([
+    const [total, utiles, mejorables, conComentario, items, acciones, bloqueos] = await Promise.all([
       cuenta(),
       cuenta((q) => q.eq("voto", "up")),
       cuenta((q) => q.eq("voto", "down")),
       cuenta((q) => q.not("comentario", "is", null)),
       lista,
       sb.from("auditoria").select("id, usuario, tabla, registro_id, valor_nuevo, created_at").eq("columna", "accion_asistente").order("created_at", { ascending: false }).limit(30),
+      sb.from("chat_bloqueos").select("id, motivo, mensaje, usuario, created_at").order("created_at", { ascending: false }).limit(30),
     ]);
     if (items.error) throw new Error(items.error.message);
     return {
@@ -63,6 +64,7 @@ export async function GET(req: Request) {
       items: items.data ?? [],
       total: items.count ?? 0,
       acciones: acciones.data ?? [],
+      bloqueos: bloqueos.data ?? [],
     };
   }, "No se pudieron leer las valoraciones");
 }

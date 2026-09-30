@@ -1,6 +1,7 @@
 import type { Content, Part } from "@google/genai";
 import { chatModel, conModelos, getGeminiClient } from "@/lib/rag";
 import type { DataAccess } from "./data";
+import { revisarEntrada, type MotivoBloqueo } from "./guardrails";
 import { systemPrompt } from "./prompt";
 import { declaraciones, describirLlamada, ejecutarHerramienta, type ContextoHerramientas } from "./tools";
 import type { ChatEvent, FuenteDocumento, MensajeEntrada, PropuestaAccion } from "./types";
@@ -17,13 +18,27 @@ export interface OpcionesAgente {
   hoy?: Date;
   /** Tokens consumidos en cada llamada al modelo (para medir coste). */
   onUso?: (u: { entrada: number; salida: number; razonamiento: number }) => void;
+  /** Se llama cuando las barreras de entrada bloquean el mensaje (para registrarlo). */
+  onBloqueo?: (motivo: MotivoBloqueo, mensaje: string) => void;
+  /** Desactivable solo en pruebas. */
+  guardrails?: boolean;
 }
 
 /**
  * Bucle del agente: el modelo decide qué herramientas llamar (function calling), el servidor las
  * ejecuta, y el resultado vuelve al modelo hasta que responde con texto. Todo se emite por eventos.
  */
-export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, hoy, onUso }: OpcionesAgente): Promise<string> {
+export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, hoy, onUso, onBloqueo, guardrails = true }: OpcionesAgente): Promise<string> {
+  const ultimo = mensajes[mensajes.length - 1];
+  if (guardrails && ultimo?.role === "user") {
+    const revision = await revisarEntrada(ultimo.content, { hayHistorial: mensajes.length > 1 });
+    if (!revision.ok) {
+      onBloqueo?.(revision.motivo, ultimo.content);
+      onEvent({ type: "text", delta: revision.respuesta });
+      return revision.respuesta;
+    }
+  }
+
   const client = getGeminiClient();
   const fuentes: FuenteDocumento[] = [];
   const acciones: PropuestaAccion[] = [];
@@ -49,6 +64,7 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
           systemInstruction: systemPrompt(hoy),
           tools: [{ functionDeclarations: declaraciones() }],
           temperature: 0.3,
+          maxOutputTokens: 2048,
           abortSignal: signal,
         },
       })

@@ -2,7 +2,7 @@ import type { ChatEvent, MensajeEntrada } from "@/lib/chat/types";
 import type {
   Alerta, Cliente, Coincidencia, DatosSubida, Documento, EstadoLector, ExtraccionListada, FichaEdificio, FichaPropiedad,
   FiltrosPropiedades, FragmentoDocumento, HealthReport, ListaAlertas, ListaPropiedades, Resolucion, ResultadoBusqueda, Resumen,
-  SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion,
+  SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion, RegistroBloqueo,
 } from "@/lib/types";
 
 // Cliente HTTP del frontend: única capa que conoce las rutas de /api.
@@ -69,7 +69,7 @@ export const enviarValoracion = (v: { voto: "up" | "down"; pregunta: string; res
   sendJson<{ id: number }>("/api/chat/valoraciones", v);
 
 export const listarValoraciones = (f: { voto?: string; pagina?: number } = {}) =>
-  request<{ resumen: ResumenValoraciones; items: Valoracion[]; total: number; acciones: RegistroAccion[] }>(`/api/chat/valoraciones${query(f)}`);
+  request<{ resumen: ResumenValoraciones; items: Valoracion[]; total: number; acciones: RegistroAccion[]; bloqueos: RegistroBloqueo[] }>(`/api/chat/valoraciones${query(f)}`);
 
 // ── Panel, propiedades, edificios ───────────────────────────────────────────────────────────────
 export const getResumen = () => request<Resumen>("/api/resumen");

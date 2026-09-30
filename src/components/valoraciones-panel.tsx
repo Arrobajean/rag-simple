@@ -11,6 +11,8 @@ import { useSesion } from "@/hooks/use-sesion";
 import { useValoraciones } from "@/hooks/use-valoraciones";
 import { fecha, pct } from "@/lib/format";
 
+const MOTIVOS = { manipulacion: "Manipulación", formato: "Cambio de formato", fuera_de_alcance: "Fuera de alcance", demasiado_largo: "Muy largo" } as const;
+
 function Cifra({ titulo, valor, detalle }: { titulo: string; valor: string; detalle?: string }) {
   return (
     <Card className="shadow-xs">
@@ -39,7 +41,7 @@ export function ValoracionesPanel() {
   if (v.loading && !v.datos) return <CargandoBloques n={3} />;
   if (v.error || !v.datos) return <ErrorCarga mensaje={v.error ?? "Sin datos"} onReintentar={v.recargar} />;
 
-  const { resumen, items, acciones, total } = v.datos;
+  const { resumen, items, acciones, bloqueos, total } = v.datos;
   const porcentajeUtil = resumen.total ? (100 * resumen.utiles) / resumen.total : null;
 
   return (
@@ -88,6 +90,25 @@ export function ValoracionesPanel() {
               <li key={a.id} className="flex items-start justify-between gap-3 p-3 text-sm">
                 <span>{a.valor_nuevo?.resumen ?? a.tabla}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">{fecha(a.created_at)}{a.usuario ? ` · ${a.usuario}` : ""}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-3" aria-label="Intentos bloqueados">
+        <h2 className="text-sm font-semibold">Intentos bloqueados por las barreras del asistente</h2>
+        {bloqueos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Ningún mensaje ha sido bloqueado.</p>
+        ) : (
+          <ul className="divide-y rounded-lg border">
+            {bloqueos.map((b) => (
+              <li key={b.id} className="flex items-start justify-between gap-3 p-3 text-sm">
+                <span className="min-w-0">
+                  <span className="mr-2 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">{MOTIVOS[b.motivo]}</span>
+                  <span className="break-words">{b.mensaje}</span>
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">{fecha(b.created_at)}</span>
               </li>
             ))}
           </ul>

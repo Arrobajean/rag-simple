@@ -1,9 +1,24 @@
-import { describeError } from "@/lib/rag";
+import { describeError, getSupabaseClient } from "@/lib/rag";
+import { sesionDe } from "@/lib/auth";
 import { ejecutarAgente } from "@/lib/chat/agent";
 import { supabaseData } from "@/lib/chat/data";
 import type { ChatEvent, MensajeEntrada } from "@/lib/chat/types";
 
 export const maxDuration = 120;
+
+// Límite de ritmo por IP (en memoria: es una barrera básica contra abusos, no un límite exacto entre instancias)
+const VENTANA_MS = 10 * 60_000;
+const MAX_PETICIONES = 40;
+const peticiones = new Map<string, number[]>();
+
+function demasiadasPeticiones(ip: string): boolean {
+  const ahora = Date.now();
+  const recientes = (peticiones.get(ip) ?? []).filter((t) => ahora - t < VENTANA_MS);
+  recientes.push(ahora);
+  peticiones.set(ip, recientes);
+  if (peticiones.size > 5000) peticiones.clear();
+  return recientes.length > MAX_PETICIONES;
+}
 
 function mensajesDe(body: unknown): MensajeEntrada[] | null {
   const b = body as { messages?: unknown; question?: unknown };
@@ -12,7 +27,9 @@ function mensajesDe(body: unknown): MensajeEntrada[] | null {
       (m): m is MensajeEntrada =>
         !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim() !== ""
     );
-    return valid.length && valid[valid.length - 1].role === "user" ? valid : null;
+    // Los mensajes antiguos se recortan: el historial es una vía de entrada más
+    const acotados = valid.map((m, i) => (i < valid.length - 1 ? { ...m, content: m.content.slice(0, 4000) } : m));
+    return acotados.length && acotados[acotados.length - 1].role === "user" ? acotados : null;
   }
   if (typeof b?.question === "string" && b.question.trim()) return [{ role: "user", content: b.question }];
   return null;
@@ -25,12 +42,27 @@ export async function POST(req: Request) {
     return Response.json({ error: "Envía al menos un mensaje del usuario" }, { status: 400 });
   }
 
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (demasiadasPeticiones(ip)) {
+    return Response.json({ error: "Demasiadas consultas seguidas. Espera unos minutos." }, { status: 429 });
+  }
+  const usuario = (await sesionDe(req))?.rol ?? null;
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const emit = (e: ChatEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(e)}\n`));
       try {
-        await ejecutarAgente({ mensajes, data: supabaseData(), onEvent: emit, signal: req.signal });
+        await ejecutarAgente({
+          mensajes,
+          data: supabaseData(),
+          onEvent: emit,
+          signal: req.signal,
+          onBloqueo: (motivo, mensaje) => {
+            // Se registra sin bloquear la respuesta
+            void getSupabaseClient().from("chat_bloqueos").insert({ motivo, mensaje: mensaje.slice(0, 2000), usuario }).then(() => undefined, () => undefined);
+          },
+        });
         emit({ type: "done" });
       } catch (error: unknown) {
         console.error("Error en /api/chat:", error);
