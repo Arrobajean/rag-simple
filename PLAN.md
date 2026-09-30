@@ -24,8 +24,11 @@ Restricciones del usuario:
 
 - [x] Archivos creados: `rag.py`, `ingest.py`, `ask.py`, `schema.sql`, `requirements.txt`, `.env.example`, `.gitignore`, `docs/ejemplo.md`.
 - [x] `git init` en rama `main`, archivos en staging, **sin commit todavía**.
-- [ ] Entorno virtual (`.venv`) aún no creado en esta carpeta.
-- [ ] Nada configurado en Supabase ni en Google.
+- [x] Entorno virtual (`.venv`) creado y verificado.
+- [x] Configurado en Supabase (pgvector, tabla `documents`, función `match_documents`).
+- [x] Configurada API de Google Gemini (`gemini-embedding-001` y `gemini-flash-latest`).
+- [x] Prueba de extremo a extremo completada con éxito (`ingest.py` y `ask.py`).
+- [x] Repositorio desplegado en GitHub (`Arrobajean/rag-simple`).
 
 ---
 

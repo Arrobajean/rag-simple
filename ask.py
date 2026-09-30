@@ -24,12 +24,20 @@ def ask(question: str) -> str:
     ).execute().data
 
     context = "\n\n".join(f"[{m['source']}]\n{m['content']}" for m in matches)
-    resp = gemini.models.generate_content(
-        model=CHAT_MODEL,
-        contents=f"Contexto:\n{context}\n\nPregunta: {question}",
-        config=types.GenerateContentConfig(system_instruction=SYSTEM),
-    )
-    return resp.text
+    import time
+    for attempt in range(3):
+        try:
+            resp = gemini.models.generate_content(
+                model=CHAT_MODEL,
+                contents=f"Contexto:\n{context}\n\nPregunta: {question}",
+                config=types.GenerateContentConfig(system_instruction=SYSTEM),
+            )
+            return resp.text
+        except Exception as e:
+            if "503" in str(e) and attempt < 2:
+                time.sleep(2)
+                continue
+            raise e
 
 
 if __name__ == "__main__":

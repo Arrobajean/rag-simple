@@ -10,7 +10,7 @@ load_dotenv()
 
 EMBED_MODEL = "gemini-embedding-001"
 EMBED_DIMS = 768
-CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-2.5-flash")
+CHAT_MODEL = os.getenv("GEMINI_CHAT_MODEL", "gemini-flash-latest")
 
 gemini = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
