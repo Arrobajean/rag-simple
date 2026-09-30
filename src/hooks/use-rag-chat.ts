@@ -7,14 +7,6 @@ import type { ChatEvent, EjecucionHerramienta } from "@/lib/chat/types";
 import { aplicarUso, CONTEXTO_INICIAL, iniciarTurno, type ContextoChat } from "@/lib/chat-contexto";
 import type { ChatMessage } from "@/lib/types";
 
-const WELCOME: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Hola, soy tu asistente de gestión inmobiliaria. Puedo **contar y filtrar propiedades**, consultar contratos, cobros y alertas, y **leer los documentos** (contratos, normas de comunidad, actas). Los números salen siempre de la base de datos.",
-  timestamp: "Ahora",
-};
-
 const hora = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 function nuevo(role: ChatMessage["role"], content: string, extra?: Partial<ChatMessage>): ChatMessage {
@@ -49,7 +41,7 @@ function aplicar(m: ChatMessage, e: ChatEvent): ChatMessage {
 }
 
 export function useRagChat() {
-  const [messages, setMessages] = React.useState<ChatMessage[]>([WELCOME]);
+  const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [contexto, setContexto] = React.useState<ContextoChat>(CONTEXTO_INICIAL);
   const abortRef = React.useRef<AbortController | null>(null);
@@ -59,7 +51,7 @@ export function useRagChat() {
       const q = question.trim();
       if (!q || loading) return;
 
-      const historial = [...messages.filter((m) => m.id !== "welcome" && !m.error), nuevo("user", q)];
+      const historial = [...messages.filter((m) => !m.error), nuevo("user", q)];
       const respuesta = nuevo("assistant", "", { enCurso: true, herramientas: [] });
       setMessages((prev) => [...prev, historial[historial.length - 1], respuesta]);
       setLoading(true);
@@ -101,9 +93,8 @@ export function useRagChat() {
 
   const clear = React.useCallback(() => {
     abortRef.current?.abort();
-    setMessages([{ ...WELCOME, content: "Conversación reiniciada. ¿En qué puedo ayudarte?" }]);
+    setMessages([]);
     setContexto(CONTEXTO_INICIAL);
-    toast.success("Conversación reiniciada");
   }, []);
 
   return { messages, loading, contexto, send, stop, questionFor, clear };

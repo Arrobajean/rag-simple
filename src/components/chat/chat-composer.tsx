@@ -1,122 +1,148 @@
 "use client";
 
 import * as React from "react";
-import { RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ContextMeter } from "@/components/chat/context-meter";
 import type { ContextoChat } from "@/lib/chat-contexto";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-interface ChatComposerProps {
+interface Props {
   loading: boolean;
-  suggestions?: string[];
-  canClear?: boolean;
+  hayConversacion: boolean;
   contexto?: ContextoChat;
   onSend: (question: string) => void;
-  onStop?: () => void;
-  onClear?: () => void;
+  onStop: () => void;
+  onNueva: () => void;
+  onCopiar: () => void;
+  onDescargar: () => void;
 }
 
-export function ChatComposer({
-  loading,
-  suggestions = [],
-  canClear = false,
-  contexto,
-  onSend,
-  onStop,
-  onClear,
-}: ChatComposerProps) {
-  const [input, setInput] = React.useState("");
+const MAX_ALTO_PX = 200;
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
-    onSend(input);
-    setInput("");
+/** Campo de texto del asistente al estilo de los chats actuales: crece con el texto, Enter envía, Mayús+Enter salta de línea. */
+export function ChatComposer({ loading, hayConversacion, contexto, onSend, onStop, onNueva, onCopiar, onDescargar }: Props) {
+  const [texto, setTexto] = React.useState("");
+  const [copiado, setCopiado] = React.useState(false);
+  const area = React.useRef<HTMLTextAreaElement>(null);
+  const reducir = useReducedMotion();
+  const puedeEnviar = texto.trim().length > 0 && !loading;
+
+  // Ajusta el alto al contenido (hasta un máximo)
+  React.useLayoutEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_ALTO_PX)}px`;
+  }, [texto]);
+
+  const enviar = () => {
+    if (!puedeEnviar) return;
+    onSend(texto);
+    setTexto("");
+  };
+
+  const copiar = () => {
+    onCopiar();
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1600);
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      {/* Sugerencias iniciales o barra contextual con acción de limpiar */}
-      {suggestions.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 w-full">
-          {suggestions.map((sug) => (
-            <Button
-              key={sug}
-              variant="outline"
-              size="sm"
-              onClick={() => onSend(sug)}
-              className="h-7 text-xs font-normal rounded-full text-muted-foreground hover:text-foreground"
-            >
-              {sug}
-            </Button>
-          ))}
-        </div>
-      ) : canClear && onClear ? (
-        <div className="flex items-center justify-between w-full px-1 text-xs">
-          {contexto && contexto.llamadas > 0 ? (
-            <ContextMeter contexto={contexto} />
-          ) : (
-            <span className="text-[11px] text-muted-foreground">Consulta la cartera, los contratos y los documentos</span>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            disabled={loading}
-            className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors gap-1.5"
-          >
-            <Trash2Icon className="size-3" />
-            <span>Limpiar conversación</span>
-          </Button>
-        </div>
-      ) : null}
+    <div
+      className={cn(
+        "group/composer rounded-[28px] border bg-muted/50 px-3 pt-2.5 pb-2 shadow-xs transition-all duration-200",
+        "focus-within:border-foreground/20 focus-within:bg-muted/70 focus-within:shadow-md"
+      )}
+    >
+      <textarea
+        ref={area}
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            enviar();
+          }
+          if (e.key === "Escape" && loading) onStop();
+        }}
+        rows={1}
+        placeholder="Pregunta por propiedades, contratos, cobros o documentos"
+        aria-label="Escribe tu pregunta"
+        className="block max-h-[200px] w-full resize-none bg-transparent px-2 py-1 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70"
+      />
 
-      <form onSubmit={submit} className="flex w-full gap-2 items-center">
-        {onClear && (
+      <div className="mt-1 flex items-center justify-between">
+        <DropdownMenu>
           <Tooltip>
             <TooltipTrigger
               render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={onClear}
-                  disabled={loading || !canClear}
-                  className="size-10 shrink-0 text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10 transition-colors"
-                  aria-label="Reiniciar conversación"
+                <DropdownMenuTrigger
+                  aria-label="Más opciones"
+                  className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-foreground/10 data-[popup-open]:text-foreground"
                 />
               }
             >
-              <RotateCcwIcon className="size-4" />
+              <PlusIcon className="size-5 transition-transform duration-200 group-has-[[data-popup-open]]/composer:rotate-45" />
             </TooltipTrigger>
-            <TooltipContent>Reiniciar conversación</TooltipContent>
+            <TooltipContent>Más opciones</TooltipContent>
           </Tooltip>
-        )}
+          <DropdownMenuContent side="top" align="start" className="w-60">
+            <DropdownMenuItem onClick={onNueva}>
+              <SquarePenIcon /> Nueva conversación
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!hayConversacion} onClick={copiar}>
+              {copiado ? <CheckIcon /> : <CopyIcon />} Copiar conversación
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!hayConversacion} onClick={onDescargar}>
+              <DownloadIcon /> Descargar como Markdown
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Pregunta por propiedades, contratos, cobros, alertas o documentos…"
-          aria-label="Escribe tu pregunta"
-          disabled={loading}
-          className="h-10 text-sm flex-1"
-        />
+        <div className="flex items-center gap-2">
+          {contexto && contexto.llamadas > 0 && <ContextMeter contexto={contexto} />}
 
-        {loading && onStop ? (
-          <Button type="button" variant="outline" onClick={onStop} className="h-10 px-4">
-            <SquareIcon className="size-3.5" />
-            <span className="ml-1.5 hidden sm:inline">Detener</span>
-          </Button>
-        ) : (
-          <Button type="submit" disabled={!input.trim() || loading} className="h-10 px-4">
-            <SendIcon className="size-4" />
-            <span className="ml-1.5 hidden sm:inline">Preguntar</span>
-          </Button>
-        )}
-      </form>
+          <AnimatePresence mode="wait" initial={false}>
+            {loading ? (
+              <motion.button
+                key="parar"
+                type="button"
+                onClick={onStop}
+                aria-label="Detener respuesta (Esc)"
+                title="Detener (Esc)"
+                initial={reducir ? false : { scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={reducir ? undefined : { scale: 0.6, opacity: 0 }}
+                whileTap={{ scale: 0.92 }}
+                className="flex size-9 items-center justify-center rounded-full bg-foreground text-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <SquareIcon className="size-3.5 fill-current" />
+              </motion.button>
+            ) : (
+              <motion.button
+                key="enviar"
+                type="button"
+                onClick={enviar}
+                disabled={!puedeEnviar}
+                aria-label="Enviar (Enter)"
+                title="Enviar (Enter)"
+                initial={reducir ? false : { scale: 0.6, opacity: 0 }}
+                animate={{ scale: puedeEnviar ? 1 : 0.9, opacity: puedeEnviar ? 1 : 0.35 }}
+                exit={reducir ? undefined : { scale: 0.6, opacity: 0 }}
+                whileHover={puedeEnviar ? { scale: 1.08 } : undefined}
+                whileTap={puedeEnviar ? { scale: 0.92 } : undefined}
+                className="flex size-9 items-center justify-center rounded-full bg-foreground text-background outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ArrowUpIcon className="size-[18px]" strokeWidth={2.4} />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }

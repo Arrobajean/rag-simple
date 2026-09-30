@@ -1,11 +1,13 @@
 import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { DashboardContenido } from "@/components/dashboard-contenido";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider
+      className="h-svh overflow-hidden"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 64)",
@@ -14,9 +16,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     >
       <AppSidebar variant="inset" />
-      <SidebarInset>
+      <SidebarInset className="min-h-0 overflow-hidden">
         <SiteHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 md:p-6">{children}</main>
+        <DashboardContenido>{children}</DashboardContenido>
       </SidebarInset>
     </SidebarProvider>
   );

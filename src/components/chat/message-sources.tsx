@@ -14,8 +14,8 @@ export function MessageSources({ fuentes }: { fuentes: FuenteDocumento[] }) {
   const Chevron = open ? ChevronUpIcon : ChevronDownIcon;
 
   return (
-    <div className="pl-[42px] max-w-[92%] md:max-w-[80%]">
-      <Button variant="ghost" size="sm" onClick={() => setOpen((v) => !v)} className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground">
+    <div>
+      <Button variant="ghost" size="sm" onClick={() => setOpen((v) => !v)} className="-ml-2 h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground">
         <BookOpenIcon className="mr-1 size-3" />
         {fuentes.length} fragmento{fuentes.length > 1 ? "s" : ""} de documentos
         <Chevron className="ml-1 size-3" />
