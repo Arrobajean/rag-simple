@@ -39,6 +39,8 @@ export type ChatEvent =
   | { type: "tool_start"; id: string; nombre: string; descripcion: string }
   | { type: "tool_end"; id: string; ok: boolean; resumen: string; presentacion?: Presentacion }
   | { type: "sources"; fuentes: FuenteDocumento[] }
+  /** Tokens de una llamada al modelo: `entrada` es todo el contexto enviado en esa llamada. */
+  | { type: "usage"; entrada: number; salida: number; razonamiento: number }
   | { type: "text"; delta: string }
   | { type: "done" }
   | { type: "error"; message: string; status?: number };
@@ -47,3 +49,6 @@ export interface MensajeEntrada {
   role: "user" | "assistant";
   content: string;
 }
+
+/** Tamaño de la ventana de contexto del modelo (Gemini Flash-Lite: ~1 M de tokens de entrada). */
+export const VENTANA_CONTEXTO = 1_048_576;

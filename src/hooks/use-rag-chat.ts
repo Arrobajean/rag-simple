@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { errorMessage, streamChat } from "@/lib/api";
 import type { ChatEvent, EjecucionHerramienta } from "@/lib/chat/types";
+import { aplicarUso, CONTEXTO_INICIAL, iniciarTurno, type ContextoChat } from "@/lib/chat-contexto";
 import type { ChatMessage } from "@/lib/types";
 
 const WELCOME: ChatMessage = {
@@ -36,6 +37,8 @@ function aplicar(m: ChatMessage, e: ChatEvent): ChatMessage {
           h.id === e.id ? { ...h, estado: e.ok ? "hecha" : "error", resumen: e.resumen, presentacion: e.presentacion } : h
         ),
       };
+    case "usage":
+      return m; // el uso de tokens se contabiliza aparte (contexto)
     case "sources":
       return { ...m, fuentes: e.fuentes };
     case "error":
@@ -48,6 +51,7 @@ function aplicar(m: ChatMessage, e: ChatEvent): ChatMessage {
 export function useRagChat() {
   const [messages, setMessages] = React.useState<ChatMessage[]>([WELCOME]);
   const [loading, setLoading] = React.useState(false);
+  const [contexto, setContexto] = React.useState<ContextoChat>(CONTEXTO_INICIAL);
   const abortRef = React.useRef<AbortController | null>(null);
 
   const send = React.useCallback(
@@ -59,13 +63,17 @@ export function useRagChat() {
       const respuesta = nuevo("assistant", "", { enCurso: true, herramientas: [] });
       setMessages((prev) => [...prev, historial[historial.length - 1], respuesta]);
       setLoading(true);
+      setContexto((c) => iniciarTurno(c, q));
 
       const controller = new AbortController();
       abortRef.current = controller;
       try {
         await streamChat(
           historial.map((m) => ({ role: m.role, content: m.content })),
-          (e) => setMessages((prev) => prev.map((m) => (m.id === respuesta.id ? aplicar(m, e) : m))),
+          (e) => {
+            if (e.type === "usage") setContexto((c) => aplicarUso(c, e));
+            setMessages((prev) => prev.map((m) => (m.id === respuesta.id ? aplicar(m, e) : m)));
+          },
           controller.signal
         );
       } catch (err: unknown) {
@@ -94,8 +102,9 @@ export function useRagChat() {
   const clear = React.useCallback(() => {
     abortRef.current?.abort();
     setMessages([{ ...WELCOME, content: "Conversación reiniciada. ¿En qué puedo ayudarte?" }]);
+    setContexto(CONTEXTO_INICIAL);
     toast.success("Conversación reiniciada");
   }, []);
 
-  return { messages, loading, send, stop, questionFor, clear };
+  return { messages, loading, contexto, send, stop, questionFor, clear };
 }

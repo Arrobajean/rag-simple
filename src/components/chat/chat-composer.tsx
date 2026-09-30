@@ -4,12 +4,15 @@ import * as React from "react";
 import { RotateCcwIcon, SendIcon, SquareIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ContextMeter } from "@/components/chat/context-meter";
+import type { ContextoChat } from "@/lib/chat-contexto";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatComposerProps {
   loading: boolean;
   suggestions?: string[];
   canClear?: boolean;
+  contexto?: ContextoChat;
   onSend: (question: string) => void;
   onStop?: () => void;
   onClear?: () => void;
@@ -19,6 +22,7 @@ export function ChatComposer({
   loading,
   suggestions = [],
   canClear = false,
+  contexto,
   onSend,
   onStop,
   onClear,
@@ -51,9 +55,11 @@ export function ChatComposer({
         </div>
       ) : canClear && onClear ? (
         <div className="flex items-center justify-between w-full px-1 text-xs">
-          <span className="text-[11px] text-muted-foreground">
-            Consulta la cartera, los contratos y los documentos
-          </span>
+          {contexto && contexto.llamadas > 0 ? (
+            <ContextMeter contexto={contexto} />
+          ) : (
+            <span className="text-[11px] text-muted-foreground">Consulta la cartera, los contratos y los documentos</span>
+          )}
           <Button
             type="button"
             variant="ghost"

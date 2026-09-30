@@ -19,7 +19,7 @@ const SUGGESTIONS = [
 const handleVote = (vote: "up" | "down") => toast(vote === "up" ? "Gracias por el feedback" : "Anotado, lo mejoraremos");
 
 export function RagChat() {
-  const { messages, loading, send, stop, questionFor, clear } = useRagChat();
+  const { messages, loading, contexto, send, stop, questionFor, clear } = useRagChat();
   const endRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -44,7 +44,7 @@ export function RagChat() {
       <Separator />
 
       <CardFooter className="flex-col gap-2 bg-card p-3">
-        <ChatComposer loading={loading} suggestions={messages.length <= 2 ? SUGGESTIONS : []} canClear={messages.length > 1} onSend={send} onStop={stop} onClear={clear} />
+        <ChatComposer loading={loading} suggestions={messages.length <= 2 ? SUGGESTIONS : []} canClear={messages.length > 1} contexto={contexto} onSend={send} onStop={stop} onClear={clear} />
       </CardFooter>
     </Card>
   );

@@ -75,7 +75,10 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
       }
     }
 
-    if (uso) onUso?.(uso);
+    if (uso) {
+      onUso?.(uso);
+      onEvent({ type: "usage", ...uso });
+    }
     if (llamadas.length === 0) break;
 
     contents.push({ role: "model", parts: partesModelo });
