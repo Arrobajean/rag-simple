@@ -41,7 +41,8 @@ export function useServiceHealth(intervalMs = 60_000) {
     let active = true;
     const isActive = () => active;
     check(isActive);
-    const id = setInterval(() => check(isActive), intervalMs);
+    // No se sondea con la pestaña oculta: al volver se comprueba de inmediato (onVisible)
+    const id = setInterval(() => document.visibilityState === "visible" && check(isActive), intervalMs);
     const onVisible = () => document.visibilityState === "visible" && check(isActive);
     document.addEventListener("visibilitychange", onVisible);
     return () => {

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useChat } from "@/components/chat-provider";
+import { useChatAcciones, useChatCantidad } from "@/components/chat-provider";
 import { etiquetaRol } from "@/lib/perfil";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,8 @@ function Seccion({ titulo, children }: { titulo: string; children: React.ReactNo
 
 export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, rol, abierto, onSalir }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
-  const { clear, messages } = useChat();
+  const { clear } = useChatAcciones();
+  const total = useChatCantidad();
   const [borrador, setBorrador] = React.useState(nombre);
   const oscuro = resolvedTheme !== "light";
 
@@ -94,12 +95,12 @@ export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, rol,
             <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
               <div className="text-sm">
                 <p className="font-medium">Conversación guardada</p>
-                <p className="text-xs text-muted-foreground">{messages.length ? `${messages.length} mensajes en este navegador` : "No hay ninguna"}</p>
+                <p className="text-xs text-muted-foreground">{total ? `${total} mensajes en este navegador` : "No hay ninguna"}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={messages.length === 0}
+                disabled={total === 0}
                 onClick={() => {
                   clear();
                   toast.success("Conversación borrada");

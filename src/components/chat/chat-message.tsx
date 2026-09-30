@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { MessageSources } from "@/components/chat/message-sources";
 import { CitedMarkdown } from "@/components/chat/cited-markdown";
@@ -14,18 +15,24 @@ import type { ChatMessage as ChatMessageData } from "@/lib/types";
 
 interface ChatMessageProps {
   message: ChatMessageData;
-  onRetry?: () => void;
-  onVote?: (vote: "up" | "down", comentario?: string) => Promise<boolean> | void;
-  onConfirmarAccion?: (a: AccionUI) => void;
-  onCancelarAccion?: (a: AccionUI) => void;
+  /** Se puede volver a generar (hay pregunta previa y no hay otra respuesta en curso) */
+  puedeReintentar: boolean;
+  // Manejadores estables que reciben el id: así el mensaje se memoiza y no se repinta al llegar otro por streaming
+  onReintentar: (mensajeId: string) => void;
+  onValorar: (mensajeId: string, vote: "up" | "down", comentario?: string) => Promise<boolean>;
+  onConfirmarAccion: (mensajeId: string, a: AccionUI) => void;
+  onCancelarAccion: (mensajeId: string, a: AccionUI) => void;
 }
 
 /**
  * Mensaje al estilo de los chats actuales: el usuario en una píldora a la derecha; el asistente sin burbuja,
  * a todo el ancho de la columna, con sus consultas, resultados, fuentes y acciones debajo.
  */
-export function ChatMessage({ message, onRetry, onVote, onConfirmarAccion, onCancelarAccion }: ChatMessageProps) {
+export const ChatMessage = React.memo(function ChatMessage({ message, puedeReintentar, onReintentar, onValorar, onConfirmarAccion, onCancelarAccion }: ChatMessageProps) {
   const reducir = useReducedMotion();
+  const id = message.id;
+  const onRetry = React.useCallback(() => onReintentar(id), [onReintentar, id]);
+  const onVote = React.useCallback((v: "up" | "down", comentario?: string) => onValorar(id, v, comentario), [onValorar, id]);
   const esUsuario = message.role === "user";
   const pasos = message.herramientas ?? [];
   const resultados = pasos.filter((p) => p.presentacion);
@@ -54,9 +61,11 @@ export function ChatMessage({ message, onRetry, onVote, onConfirmarAccion, onCan
       )}
       {message.fuentes && message.fuentes.length > 0 && <MessageSources fuentes={message.fuentes} />}
       {(message.acciones ?? []).map((a) => (
-        <AccionCard key={a.id} accion={a} onConfirmar={() => onConfirmarAccion?.(a)} onCancelar={() => onCancelarAccion?.(a)} />
+        <AccionCard key={a.id} accion={a} onConfirmar={() => onConfirmarAccion(id, a)} onCancelar={() => onCancelarAccion(id, a)} />
       ))}
-      {!message.enCurso && message.content && <MensajeAcciones texto={message.content} onReintentar={onRetry} onVoto={onVote} />}
+      {!message.enCurso && message.content && (
+        <MensajeAcciones texto={message.content} onReintentar={puedeReintentar ? onRetry : undefined} onVoto={message.error ? undefined : onVote} />
+      )}
     </motion.div>
   );
-}
+});

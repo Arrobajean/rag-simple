@@ -6,11 +6,12 @@ import { toast } from "sonner";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { useAutoscroll } from "@/hooks/use-autoscroll";
-import { useChat } from "@/components/chat-provider";
+import { useChatAcciones, useChatEstado } from "@/components/chat-provider";
 import { conversacionAMarkdown } from "@/lib/chat-export";
 
 export function RagChat() {
-  const { messages, loading, contexto, send, stop, questionFor, clear, confirmarAccion, cancelarAccion, valorar } = useChat();
+  const { messages, loading, contexto } = useChatEstado();
+  const { send, stop, clear, reintentar, confirmarAccion, cancelarAccion, valorar } = useChatAcciones();
   const { ref, alScroll, mostrarBajar, bajar } = useAutoscroll<HTMLDivElement>(messages);
   const vacio = messages.length === 0;
 
@@ -32,19 +33,17 @@ export function RagChat() {
       {/* Único scroll de la pantalla: los mensajes. El campo de texto queda fijo abajo. */}
       <div ref={ref} onScroll={alScroll} className={vacio ? "hidden" : "min-h-0 flex-1 overflow-y-auto scroll-smooth"}>
         <div className="mx-auto w-full max-w-3xl space-y-8 px-4 pt-6 pb-8">
-          {messages.map((m, idx) => {
-            const pregunta = m.role === "assistant" && !m.enCurso ? questionFor(idx) : undefined;
-            return (
-              <ChatMessage
-                key={m.id}
-                message={m}
-                onRetry={pregunta && !loading ? () => send(pregunta) : undefined}
-                onVote={m.role === "assistant" && !m.error ? (v, comentario) => valorar(m.id, v, comentario) : undefined}
-                onConfirmarAccion={(a) => void confirmarAccion(m.id, a)}
-                onCancelarAccion={(a) => cancelarAccion(m.id, a)}
-              />
-            );
-          })}
+          {messages.map((m, idx) => (
+            <ChatMessage
+              key={m.id}
+              message={m}
+              puedeReintentar={!loading && idx > 0}
+              onReintentar={reintentar}
+              onValorar={valorar}
+              onConfirmarAccion={confirmarAccion}
+              onCancelarAccion={cancelarAccion}
+            />
+          ))}
         </div>
       </div>
 
