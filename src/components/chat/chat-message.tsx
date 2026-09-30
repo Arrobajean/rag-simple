@@ -6,6 +6,7 @@ import { CitedMarkdown } from "@/components/chat/cited-markdown";
 import { ToolSteps } from "@/components/chat/tool-steps";
 import { ToolResult } from "@/components/chat/tool-result";
 import { ChatThinking } from "@/components/chat/chat-thinking";
+import { faseDelMensaje } from "@/lib/chat-fase";
 import type { ChatMessage as ChatMessageData } from "@/lib/types";
 
 export function ChatAvatar({ role }: { role: ChatMessageData["role"] }) {
@@ -29,7 +30,7 @@ export function ChatMessage({ message, onRetry, onVote }: ChatMessageProps) {
   const isUser = message.role === "user";
   const pasos = message.herramientas ?? [];
   const resultados = pasos.filter((p) => p.presentacion);
-  const esperando = message.enCurso && !message.content && pasos.every((p) => p.estado !== "ejecutando");
+  const fase = faseDelMensaje(message);
 
   return (
     <div className="space-y-1.5">
@@ -52,7 +53,7 @@ export function ChatMessage({ message, onRetry, onVote }: ChatMessageProps) {
         </AIMessage>
       )}
 
-      {esperando && <ChatThinking />}
+      {fase && <ChatThinking fase={fase} conAvatar={pasos.length === 0 && !message.content} />}
 
       {!isUser && resultados.length > 0 && (
         <div className="max-w-[92%] space-y-2 pl-[42px] md:max-w-[80%]">
