@@ -12,8 +12,32 @@ import {
   DatabaseIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface DocInfo {
@@ -31,8 +55,8 @@ export function RagDocuments({ onUpdate }: RagDocumentsProps) {
   const [totalChunks, setTotalChunks] = React.useState<number>(0);
   const [loading, setLoading] = React.useState<boolean>(true);
 
-  // Form states
-  const [isAdding, setIsAdding] = React.useState<boolean>(false);
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = React.useState<boolean>(false);
   const [sourceName, setSourceName] = React.useState<string>("");
   const [content, setContent] = React.useState<string>("");
   const [indexing, setIndexing] = React.useState<boolean>(false);
@@ -94,7 +118,7 @@ export function RagDocuments({ onUpdate }: RagDocumentsProps) {
       toast.success(`¡Documento '${data.source}' indexado! (${data.chunksCreated} fragmentos)`);
       setSourceName("");
       setContent("");
-      setIsAdding(false);
+      setDialogOpen(false);
       fetchDocs();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al indexar";
@@ -129,174 +153,176 @@ export function RagDocuments({ onUpdate }: RagDocumentsProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <Card className="shadow-sm">
+      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">Base de Documentos & Vectores</h2>
-          <p className="text-sm text-muted-foreground">
-            {docs.length} documentos indexados ({totalChunks} fragmentos vectorizados en Supabase)
-          </p>
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <DatabaseIcon className="size-5 text-primary" />
+            Base de Documentos & Vectores
+          </CardTitle>
+          <CardDescription className="text-xs">
+            {docs.length} documentos indexados ({totalChunks} fragmentos vectorizados con pgvector)
+          </CardDescription>
         </div>
+
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchDocs} disabled={loading}>
-            <RefreshCwIcon className={`size-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          <Button variant="outline" size="sm" onClick={fetchDocs} disabled={loading} className="text-xs h-8">
+            <RefreshCwIcon className={`size-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
             Actualizar
           </Button>
-          <Button size="sm" onClick={() => setIsAdding(!isAdding)}>
-            <PlusIcon className="size-4 mr-1.5" />
-            {isAdding ? "Cancelar" : "Indexar Documento"}
-          </Button>
-        </div>
-      </div>
 
-      {isAdding && (
-        <Card className="border-primary/30 shadow-md transition-colors">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <UploadCloudIcon className="size-5 text-primary" />
-              Indexar Nuevo Documento en pgvector
-            </CardTitle>
-            <CardDescription className="text-xs">
-              El texto se dividirá en fragmentos, se generarán embeddings de 768d con Gemini y se guardarán en Supabase.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleIndexDocument} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger
+              render={<Button size="sm" className="text-xs h-8" />}
+            >
+              <PlusIcon className="size-3.5 mr-1.5" />
+              Indexar Documento
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <UploadCloudIcon className="size-5 text-primary" />
+                  Indexar Documento en Supabase
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  El documento se dividirá en fragmentos, se generarán embeddings de 768d con Gemini y se almacenarán en pgvector.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleIndexDocument} className="space-y-4 pt-2">
                 <div className="space-y-1.5">
-                  <label htmlFor="doc-source-input" className="text-xs font-semibold text-foreground">
-                    Nombre de la fuente (archivo)
+                  <label htmlFor="source-name-field" className="text-xs font-semibold">
+                    Nombre del archivo o fuente:
                   </label>
-                  <input
-                    id="doc-source-input"
-                    type="text"
+                  <Input
+                    id="source-name-field"
                     value={sourceName}
                     onChange={(e) => setSourceName(e.target.value)}
-                    placeholder="ej. politicas_empresa.md"
-                    className="w-full h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="ej. manual_empresa.md"
                     required
                   />
                 </div>
+
                 <div className="space-y-1.5">
-                  <label htmlFor="doc-file-input" className="text-xs font-semibold text-foreground">
-                    O sube un archivo (.txt, .md)
+                  <label htmlFor="file-upload-field" className="text-xs font-semibold">
+                    O cargar archivo (.md, .txt):
                   </label>
-                  <input
-                    id="doc-file-input"
+                  <Input
+                    id="file-upload-field"
                     type="file"
                     accept=".txt,.md"
-                    aria-label="Seleccionar archivo .txt o .md"
                     onChange={handleFileUpload}
-                    className="w-full h-9 px-2 py-1 rounded-md border bg-background text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary/10 file:text-primary cursor-pointer"
+                    className="cursor-pointer text-xs"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="doc-content-textarea" className="text-xs font-semibold text-foreground">
-                  Contenido del documento
-                </label>
-                <textarea
-                  id="doc-content-textarea"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Pega aquí el contenido del documento para indexarlo..."
-                  rows={6}
-                  className="w-full p-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary font-mono text-xs"
-                  required
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="doc-content-field" className="text-xs font-semibold">
+                    Contenido del texto:
+                  </label>
+                  <Textarea
+                    id="doc-content-field"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Pega aquí el contenido para indexarlo en el RAG..."
+                    rows={6}
+                    className="font-mono text-xs"
+                    required
+                  />
+                </div>
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" size="sm" onClick={() => setIsAdding(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" size="sm" disabled={indexing}>
-                  {indexing ? (
-                    <>
-                      <Loader2Icon className="size-4 mr-2 animate-spin" />
-                      Vectorizando con Gemini...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2Icon className="size-4 mr-2" />
-                      Indexar en Supabase
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {loading && docs.length === 0 ? (
-        <div className="flex justify-center items-center py-16 text-muted-foreground text-sm gap-2">
-          <Loader2Icon className="size-5 animate-spin text-primary" />
-          Consultando base de datos en Supabase...
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="sm" disabled={indexing}>
+                    {indexing ? (
+                      <>
+                        <Loader2Icon className="size-3.5 mr-2 animate-spin" />
+                        Vectorizando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2Icon className="size-3.5 mr-2" />
+                        Guardar e Indexar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-      ) : docs.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent className="space-y-3">
-            <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
-              <DatabaseIcon className="size-6" />
-            </div>
-            <h3 className="font-semibold text-base">No hay documentos indexados</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Comienza agregando un documento con el botón &ldquo;Indexar Documento&rdquo; o ejecutando <code className="text-xs bg-muted px-1.5 py-0.5 rounded">python ingest.py</code> en tu terminal.
+      </CardHeader>
+
+      <CardContent>
+        {loading && docs.length === 0 ? (
+          <div className="flex justify-center items-center py-12 text-muted-foreground text-sm gap-2">
+            <Loader2Icon className="size-4 animate-spin text-primary" />
+            Cargando documentos de Supabase...
+          </div>
+        ) : docs.length === 0 ? (
+          <div className="text-center py-10 space-y-2 border rounded-lg bg-muted/20">
+            <p className="text-sm font-medium">No hay documentos indexados todavía</p>
+            <p className="text-xs text-muted-foreground">
+              Haz clic en &ldquo;Indexar Documento&rdquo; o ejecuta <code className="bg-muted px-1 rounded">python ingest.py</code>.
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {docs.map((doc) => (
-            <Card key={doc.source} className="border shadow-xs hover:border-primary/40 transition-colors">
-              <CardHeader className="pb-2 flex flex-row items-start justify-between space-y-0">
-                <div className="space-y-1">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5 break-all">
-                    <FileTextIcon className="size-4 text-primary shrink-0" />
-                    {doc.source}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {doc.count} fragmento{doc.count > 1 ? "s" : ""} vectorial{doc.count > 1 ? "es" : ""}
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-destructive shrink-0"
-                  disabled={deletingSource === doc.source}
-                  onClick={() => handleDelete(doc.source)}
-                  title="Eliminar de Supabase"
-                  aria-label={`Eliminar documento ${doc.source}`}
-                >
-                  {deletingSource === doc.source ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : (
-                    <Trash2Icon className="size-4" />
-                  )}
-                </Button>
-              </CardHeader>
-              <CardContent className="pt-2 text-xs space-y-2">
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Vista previa de fragmentos:
-                </div>
-                {doc.previews.map((prev, idx) => (
-                  <div key={`${doc.source}-preview-${idx}`} className="p-2 rounded bg-muted/50 border text-muted-foreground line-clamp-2 italic">
-                    &ldquo;{prev}&rdquo;
-                  </div>
+          </div>
+        ) : (
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/40">
+                  <TableHead className="w-[200px]">Fuente</TableHead>
+                  <TableHead className="w-[120px]">Fragmentos</TableHead>
+                  <TableHead>Vista Previa</TableHead>
+                  <TableHead className="text-right w-[100px]">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docs.map((doc) => (
+                  <TableRow key={doc.source}>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <FileTextIcon className="size-4 text-primary shrink-0" />
+                      <span className="truncate max-w-[180px]">{doc.source}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {doc.count} chunk{doc.count > 1 ? "s" : ""}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground italic line-clamp-1 max-w-[400px]">
+                      &ldquo;{doc.previews[0] || ""}&rdquo;
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-muted-foreground hover:text-destructive"
+                        disabled={deletingSource === doc.source}
+                        onClick={() => handleDelete(doc.source)}
+                        title="Eliminar de Supabase"
+                        aria-label={`Eliminar documento ${doc.source}`}
+                      >
+                        {deletingSource === doc.source ? (
+                          <Loader2Icon className="size-4 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="size-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-                <div className="pt-1 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>Supabase pgvector</span>
-                  <Badge variant="outline" className="text-[10px] font-normal">
-                    768 dimensiones
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
