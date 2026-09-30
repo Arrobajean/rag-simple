@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ejecutarAccionApi, enviarValoracion, errorMessage, streamChat } from "@/lib/api";
 import type { AccionUI, ChatEvent, EjecucionHerramienta } from "@/lib/chat/types";
 import { aplicarUso, CONTEXTO_INICIAL, iniciarTurno, type ContextoChat } from "@/lib/chat-contexto";
+import { guardarConversacion, leerConversacion } from "@/lib/chat-almacen";
 import type { ChatMessage } from "@/lib/types";
 
 /** Las acciones ya confirmadas se cuentan al modelo en el turno siguiente (no aparecen como texto en pantalla). */
@@ -54,6 +55,31 @@ export function useRagChat() {
   const [loading, setLoading] = React.useState(false);
   const [contexto, setContexto] = React.useState<ContextoChat>(CONTEXTO_INICIAL);
   const abortRef = React.useRef<AbortController | null>(null);
+  const [restaurado, setRestaurado] = React.useState(false);
+
+  // Restaura la conversación guardada tras montar (no antes: el servidor no tiene acceso al almacenamiento del navegador)
+  React.useEffect(() => {
+    let cancelado = false;
+    Promise.resolve().then(() => {
+      if (cancelado) return;
+      const guardada = leerConversacion();
+      if (guardada) {
+        setMessages(guardada.mensajes);
+        setContexto(guardada.contexto);
+      }
+      setRestaurado(true);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // Guarda al cambiar la conversación; durante el streaming se agrupa en un guardado cada 600 ms
+  React.useEffect(() => {
+    if (!restaurado) return;
+    const t = setTimeout(() => guardarConversacion(messages, contexto), loading ? 600 : 0);
+    return () => clearTimeout(t);
+  }, [messages, contexto, loading, restaurado]);
 
   const send = React.useCallback(
     async (question: string) => {

@@ -6,11 +6,11 @@ import { toast } from "sonner";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { useAutoscroll } from "@/hooks/use-autoscroll";
-import { useRagChat } from "@/hooks/use-rag-chat";
+import { useChat } from "@/components/chat-provider";
 import { conversacionAMarkdown } from "@/lib/chat-export";
 
 export function RagChat() {
-  const { messages, loading, contexto, send, stop, questionFor, clear, confirmarAccion, cancelarAccion, valorar } = useRagChat();
+  const { messages, loading, contexto, send, stop, questionFor, clear, confirmarAccion, cancelarAccion, valorar } = useChat();
   const { ref, alScroll, mostrarBajar, bajar } = useAutoscroll<HTMLDivElement>(messages);
   const vacio = messages.length === 0;
 

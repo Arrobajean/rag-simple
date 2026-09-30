@@ -11,6 +11,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { SidebarUsuario } from "@/components/sidebar-usuario";
 
 const GRUPOS = [
   {
@@ -82,10 +83,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-3">
-        <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-          Datos de demostración generados de forma sintética. Las respuestas legales son orientativas.
-        </p>
+      <SidebarFooter className="gap-2 border-t p-3">
+        <SidebarUsuario />
+        <p className="px-1 text-[10px] leading-snug text-muted-foreground">Datos de demostración sintéticos. Respuestas legales orientativas.</p>
       </SidebarFooter>
     </Sidebar>
   );
