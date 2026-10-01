@@ -1,4 +1,5 @@
 // Tipos compartidos entre el servidor (agente) y el navegador (hook del chat).
+import type { AdjuntoEntrada } from "./adjuntos-tipos";
 
 export interface FuenteDocumento {
   /** Identificador corto que el modelo cita en la respuesta: F1, F2… */
@@ -49,6 +50,10 @@ export type ChatEvent =
 export interface MensajeEntrada {
   role: "user" | "assistant";
   content: string;
+  /** Archivos del mensaje (solo el último del usuario los lleva; se revisan antes de llegar al modelo). */
+  adjuntos?: AdjuntoEntrada[];
+  /** En mensajes anteriores solo se conservan los nombres: los bytes no se reenvían. */
+  adjuntoNombres?: string[];
 }
 
 /** Tamaño de la ventana de contexto del modelo (Gemini Flash-Lite: ~1 M de tokens de entrada). */

@@ -7,6 +7,7 @@ Asistente para agencias inmobiliarias de la Comunidad de Madrid. El chat **cuent
 | Área | Descripción |
 |---|---|
 | **Asistente** | Function calling de Gemini con herramientas SQL parametrizadas (nunca SQL libre), búsqueda híbrida en documentos (vectorial + texto) con citas `[F1]`, streaming y transparencia de las consultas hechas. |
+| **Adjuntos en el chat** | Imágenes (PNG/JPEG/WebP) y PDF, hasta 3 archivos y 3 MB, para preguntar sobre ellos sin guardarlos. Tratados como contenido de terceros: validación de la firma real del archivo, rechazo de PDF con contenido activo, análisis de la capa de texto, una inspección con el modelo sin herramientas que busca texto dirigido a una IA (también el diminuto o camuflado), mínimo privilegio (sin acciones de escritura con archivos en la conversación) y salida saneada (sin imágenes remotas ni enlaces peligrosos, más una cabecera CSP). Los intentos se registran en «Valoraciones». Prueba: `pnpm adjuntos:test` (`-- --live` con Gemini real). |
 | **Acciones con confirmación** | El asistente propone abrir una incidencia, dar de alta un cliente con su demanda, resolver o posponer una alerta y cambiar el estado de una unidad; nada se ejecuta hasta que una persona pulsa «Confirmar». Queda en auditoría. |
 | **Valoraciones** | 👍/👎 bajo cada respuesta (con comentario opcional); el administrador las ve en «Valoraciones». |
 | **Propiedades** | Explorador con filtros y ficha (contrato, inquilino, cobros, documentos, clientes interesados). |

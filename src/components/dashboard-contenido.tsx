@@ -12,7 +12,7 @@ export function DashboardContenido({ children }: { children: React.ReactNode }) 
   const pantallaCompleta = usePathname() === "/dashboard/chat";
   return (
     <div className={cn("min-h-0 flex-1", pantallaCompleta ? "flex flex-col overflow-hidden" : "overflow-y-auto")}>
-      {pantallaCompleta ? children : <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6">{children}</div>}
+      {pantallaCompleta ? children : <div className="mx-auto flex w-full max-w-[112rem] flex-col gap-6 p-4 md:p-6 2xl:px-10">{children}</div>}
     </div>
   );
 }

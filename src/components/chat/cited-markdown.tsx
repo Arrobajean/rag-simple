@@ -8,6 +8,20 @@ import { FileKindIcon } from "@/components/documents/file-kind";
 import { enlazarCitas, esCita, etiquetaFuente, extracto, idDeCita } from "@/lib/citations";
 import type { FuenteDocumento } from "@/lib/chat/types";
 
+/** Solo se enlazan estos protocolos (nada de javascript:, data:, etc.). Las citas internas usan cita:. */
+const PROTOCOLOS_SEGUROS = /^(https?:|mailto:|tel:|cita:|\/(?!\/)|#)/i;
+const urlSegura = (url: string) => (PROTOCOLOS_SEGUROS.test(url.trim()) ? url : "");
+
+/** Dominio al que apunta un enlace externo; así un «pulsa aquí» no puede esconder adónde lleva. */
+function anfitrion(href: string): string | null {
+  try {
+    const u = new URL(href);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.hostname.replace(/^www\./, "") : null;
+  } catch {
+    return null;
+  }
+}
+
 // Tablas al estilo Gemini: sin caja, columnas separadas, una línea bajo cada fila y la primera columna en negrita
 const TABLA = "w-full border-separate border-spacing-x-6 text-[15px] [&_td:first-child]:font-semibold [&_td:first-child]:text-foreground";
 
@@ -34,12 +48,17 @@ export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: 
             />
           );
         }
+        if (!href) return <>{children}</>;
+        const host = anfitrion(href);
         return (
-          <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
+          <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-primary underline underline-offset-2">
             {children}
+            {host && <span className="ml-1 text-xs text-muted-foreground no-underline">({host})</span>}
           </a>
         );
       },
+      // Nunca se cargan imágenes de una respuesta: una imagen remota con datos en la URL es una vía clásica de fuga
+      img: () => null,
       p: ({ children }) => <p className="leading-relaxed [&:not(:first-child)]:mt-2">{children}</p>,
       ul: ({ children }) => <ul className="my-2 ml-4 list-disc space-y-1">{children}</ul>,
       ol: ({ children }) => <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>,
@@ -62,7 +81,7 @@ export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: 
 
   return (
     <div className="text-[15px] leading-7 break-words text-foreground/90">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} urlTransform={(u) => (u.startsWith("cita:") ? u : u)}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} urlTransform={urlSegura}>
         {contenido}
       </ReactMarkdown>
     </div>

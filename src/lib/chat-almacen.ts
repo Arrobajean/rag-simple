@@ -37,7 +37,9 @@ export function guardarConversacion(mensajes: ChatMessage[], contexto: ContextoC
       localStorage.removeItem(CLAVE);
       return;
     }
-    localStorage.setItem(CLAVE, JSON.stringify({ mensajes: mensajes.slice(-MAX_MENSAJES), contexto }));
+    // Las miniaturas son blob: de esta sesión: no sobreviven a recargar, así que no se guardan
+    const sinMiniaturas = mensajes.slice(-MAX_MENSAJES).map((m) => (m.adjuntos ? { ...m, adjuntos: m.adjuntos.map(({ nombre, mime }) => ({ nombre, mime })) } : m));
+    localStorage.setItem(CLAVE, JSON.stringify({ mensajes: sinMiniaturas, contexto }));
   } catch {
     // almacenamiento lleno o bloqueado: la conversación sigue funcionando en memoria
   }

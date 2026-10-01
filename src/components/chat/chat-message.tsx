@@ -9,6 +9,7 @@ import { ToolSteps } from "@/components/chat/tool-steps";
 import { ToolResult } from "@/components/chat/tool-result";
 import { ChatThinking } from "@/components/chat/chat-thinking";
 import { AccionCard } from "@/components/chat/accion-card";
+import { AdjuntosChips } from "@/components/chat/adjuntos-chips";
 import type { AccionUI } from "@/lib/chat/types";
 import { faseDelMensaje } from "@/lib/chat-fase";
 import type { ChatMessage as ChatMessageData } from "@/lib/types";
@@ -41,7 +42,8 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
 
   if (esUsuario) {
     return (
-      <motion.div {...animacion} className="flex justify-end">
+      <motion.div {...animacion} className="flex flex-col items-end gap-2">
+        {message.adjuntos && message.adjuntos.length > 0 && <AdjuntosChips adjuntos={message.adjuntos} className="max-w-[85%] justify-end" />}
         <p className="max-w-[85%] break-words rounded-3xl bg-muted px-4 py-2.5 text-[15px] leading-6 whitespace-pre-wrap">{message.content}</p>
       </motion.div>
     );

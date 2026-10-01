@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RAG Simple — Dashboard y Asistente",
-  description: "Asistente RAG inteligente con Supabase pgvector y Gemini Flash",
+  title: "Atlas · Gestión inmobiliaria con IA",
+  description: "Panel de gestión para agencias inmobiliarias con un asistente que consulta tus datos y lee tus contratos. Datos de demostración ficticios.",
+  applicationName: "Atlas",
 };
 
 export default function RootLayout({

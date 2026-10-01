@@ -4,7 +4,7 @@ import { ArrowDownIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { ChatComposer } from "@/components/chat/chat-composer";
-import { ChatSugerencias } from "@/components/chat/chat-sugerencias";
+import { ChatBienvenida } from "@/components/chat/chat-bienvenida";
 import { ChatMessage } from "@/components/chat/chat-message";
 import { useAutoscroll } from "@/hooks/use-autoscroll";
 import { useChatAcciones, useChatEstado } from "@/components/chat-provider";
@@ -69,7 +69,7 @@ export function RagChat() {
       {/* layout="position" mueve el bloque sin deformarlo (con `layout` a secas el contenido se estira durante la animación) */}
       <div className={vacio ? "flex flex-1 flex-col justify-center px-3 pb-10 sm:px-4 sm:pb-16" : "shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"}>
         <motion.div layout="position" transition={{ type: "spring", bounce: 0, duration: 0.5 }} className="mx-auto w-full max-w-3xl">
-          <AnimatePresence initial={false}>{vacio && <ChatSugerencias key="sugerencias" onElegir={send} />}</AnimatePresence>
+          <AnimatePresence initial={false}>{vacio && <ChatBienvenida key="bienvenida" />}</AnimatePresence>
           <ChatComposer loading={loading} hayConversacion={!vacio} contexto={contexto} onSend={send} onStop={stop} onNueva={clear} onCopiar={copiar} onDescargar={descargar} />
           {!vacio && <p className="mt-2 text-center text-[11px] text-muted-foreground">El asistente puede cometer errores. Verifica los datos importantes antes de actuar.</p>}
         </motion.div>

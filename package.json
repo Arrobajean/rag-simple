@@ -21,7 +21,8 @@
     "prod:check": "tsx scripts/prod-check.ts",
     "coste:check": "tsx scripts/coste-check.ts",
     "acciones:test": "tsx scripts/acciones-test.ts",
-    "guardrails:test": "tsx scripts/guardrails-test.ts"
+    "guardrails:test": "tsx scripts/guardrails-test.ts",
+    "adjuntos:test": "tsx scripts/adjuntos-test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

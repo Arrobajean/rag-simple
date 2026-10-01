@@ -8,7 +8,7 @@ import { chatModel, conModelos, getGeminiClient } from "@/lib/rag";
  *     herramientas cerradas, escrituras que exigen confirmación humana y validación en la base de datos.
  */
 
-export type MotivoBloqueo = "manipulacion" | "formato" | "fuera_de_alcance" | "demasiado_largo";
+export type MotivoBloqueo = "manipulacion" | "formato" | "fuera_de_alcance" | "demasiado_largo" | "adjunto_sospechoso" | "adjunto_invalido";
 
 export type ResultadoGuardrail = { ok: true } | { ok: false; motivo: MotivoBloqueo; respuesta: string };
 
@@ -22,12 +22,18 @@ const RESPUESTAS: Record<MotivoBloqueo, string> = {
   fuera_de_alcance:
     "Solo puedo ayudarte con la gestión inmobiliaria: propiedades, edificios, contratos, cobros, alertas, clientes y documentos. ¿Qué necesitas consultar?",
   demasiado_largo: `Tu mensaje es demasiado largo (máximo ${MAX_CARACTERES_MENSAJE} caracteres). Resúmelo o divídelo en preguntas más cortas.`,
+  adjunto_sospechoso:
+    "He detenido el archivo adjunto: contiene texto dirigido a una IA o instrucciones camufladas, y por seguridad no lo he procesado. Si es un documento legítimo, revísalo y vuelve a subirlo sin ese texto, o cárgalo desde Documentos.",
+  adjunto_invalido: "No he podido aceptar el archivo adjunto.",
 };
 
-const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Respuesta estándar para cada motivo (la usan las barreras de entrada y la revisión de adjuntos). */
+export const respuestaDeBloqueo = (motivo: MotivoBloqueo) => RESPUESTAS[motivo];
+
+export const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 // Intentos de anular las instrucciones, cambiar de identidad o extraer el prompt (ES/EN)
-const MANIPULACION: RegExp[] = [
+export const MANIPULACION: RegExp[] = [
   /\b(ignora|ignore|olvida|forget|omite|desobedece|salta(te)?)\b.{0,40}\b(instrucciones|reglas|normas|restricciones|prompt|instructions|rules|guidelines)\b/,
   /\b(instrucciones|reglas|prompt)\b.{0,20}\b(anteriores|previas|previous|del sistema|de sistema)\b/,
   /\b(system prompt|prompt del sistema|prompt de sistema|instrucciones del sistema|developer message|mensaje del desarrollador)\b/,
@@ -97,18 +103,21 @@ export async function clasificarAlcance(texto: string): Promise<"en_alcance" | "
 export interface OpcionesGuardrail {
   /** Hay mensajes anteriores: un «¿y en Getafe?» corto es un seguimiento válido. */
   hayHistorial?: boolean;
+  /** El mensaje lleva archivos: una frase corta («¿qué ves aquí?») es válida; su relevancia la juzga la revisión del archivo. */
+  hayAdjuntos?: boolean;
   /** Sustituible en pruebas. */
   clasificar?: typeof clasificarAlcance;
 }
 
 /** Revisión completa del último mensaje del usuario. */
-export async function revisarEntrada(texto: string, { hayHistorial = false, clasificar = clasificarAlcance }: OpcionesGuardrail = {}): Promise<ResultadoGuardrail> {
+export async function revisarEntrada(texto: string, { hayHistorial = false, hayAdjuntos = false, clasificar = clasificarAlcance }: OpcionesGuardrail = {}): Promise<ResultadoGuardrail> {
   const reglas = revisarConReglas(texto);
   if (!reglas.ok) return reglas;
   const rol = JUEGO_DE_ROL.test(norm(texto));
   if (SALUDO.test(norm(texto))) return { ok: true };
   if (!rol && pareceDelDominio(texto)) return { ok: true };
   if (!rol && hayHistorial && texto.trim().length <= 60) return { ok: true };
+  if (!rol && hayAdjuntos && texto.trim().length <= 160) return { ok: true };
 
   const categoria = await clasificar(texto);
   if (categoria === "manipulacion") return { ok: false, motivo: "manipulacion", respuesta: RESPUESTAS.manipulacion };

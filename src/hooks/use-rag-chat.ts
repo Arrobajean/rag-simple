@@ -6,7 +6,9 @@ import { ejecutarAccionApi, enviarValoracion, errorMessage, streamChat } from "@
 import type { AccionUI, ChatEvent, EjecucionHerramienta } from "@/lib/chat/types";
 import { aplicarUso, CONTEXTO_INICIAL, iniciarTurno, type ContextoChat } from "@/lib/chat-contexto";
 import { guardarConversacion, leerConversacion } from "@/lib/chat-almacen";
+import { liberarPrevisualizacion, type AdjuntoCliente } from "@/lib/adjuntos-cliente";
 import { preguntaPrevia } from "@/lib/chat-mensajes";
+import type { MensajeEntrada } from "@/lib/chat/types";
 import type { ChatMessage } from "@/lib/types";
 
 /** Las acciones ya confirmadas se cuentan al modelo en el turno siguiente (no aparecen como texto en pantalla). */
@@ -89,12 +91,14 @@ export function useRagChat() {
     return () => clearTimeout(t);
   }, [messages, contexto, loading, restaurado]);
 
-  const send = React.useCallback(async (question: string) => {
+  const send = React.useCallback(async (question: string, adjuntos: AdjuntoCliente[] = []) => {
     const q = question.trim();
     const { messages: previos, loading: ocupado } = actual.current;
     if (!q || ocupado) return;
 
-    const historial = [...previos.filter((m) => !m.error), nuevo("user", q)];
+    // En pantalla y en el historial solo se conservan nombre y tipo; los bytes viajan una vez y no se guardan
+    const vistas = adjuntos.map(({ nombre, mime, previewUrl }) => ({ nombre, mime, previewUrl }));
+    const historial = [...previos.filter((m) => !m.error), nuevo("user", q, vistas.length ? { adjuntos: vistas } : undefined)];
     const respuesta = nuevo("assistant", "", { enCurso: true, herramientas: [] });
     setMessages((prev) => [...prev, historial[historial.length - 1], respuesta]);
     setLoading(true);
@@ -104,8 +108,13 @@ export function useRagChat() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
+      const entrada: MensajeEntrada[] = historial.map((m, i): MensajeEntrada => {
+        const base: MensajeEntrada = { role: m.role, content: m.content + notasDeAcciones(m) };
+        if (i === historial.length - 1 && adjuntos.length > 0) return { ...base, adjuntos: adjuntos.map(({ nombre, mime, data }) => ({ nombre, mime, data })) };
+        return m.adjuntos?.length ? { ...base, adjuntoNombres: m.adjuntos.map((a) => a.nombre) } : base;
+      });
       await streamChat(
-        historial.map((m) => ({ role: m.role, content: m.content + notasDeAcciones(m) })),
+        entrada,
         (e) => {
           if (e.type === "usage") setContexto((c) => aplicarUso(c, e));
           setMessages((prev) => prev.map((m) => (m.id === respuesta.id ? aplicar(m, e) : m)));
@@ -128,8 +137,16 @@ export function useRagChat() {
   /** Vuelve a generar la respuesta de `mensajeId` repitiendo la pregunta que la originó. */
   const reintentar = React.useCallback(
     (mensajeId: string) => {
-      const pregunta = preguntaPrevia(actual.current.messages, mensajeId);
-      if (pregunta) void send(pregunta);
+      const todos = actual.current.messages;
+      const pregunta = preguntaPrevia(todos, mensajeId);
+      if (!pregunta) return;
+      // Los archivos no se guardan: para repetir una consulta con archivos hay que volver a adjuntarlos
+      const idx = todos.findIndex((m) => m.id === mensajeId);
+      if (todos.slice(0, idx).findLast((m) => m.role === "user")?.adjuntos?.length) {
+        toast.info("Esa pregunta llevaba archivos adjuntos. Vuelve a adjuntarlos para repetirla.");
+        return;
+      }
+      void send(pregunta);
     },
     [send]
   );
@@ -138,6 +155,7 @@ export function useRagChat() {
 
   const clear = React.useCallback(() => {
     abortRef.current?.abort();
+    actual.current.messages.forEach((m) => m.adjuntos?.forEach(liberarPrevisualizacion));
     setMessages([]);
     setContexto(CONTEXTO_INICIAL);
   }, []);

@@ -2,6 +2,27 @@ import { AlertCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Esqueleto con la misma forma que el panel: evita el salto de diseño al llegar los datos. */
+export function CargandoPanel() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Cargando">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-8 w-full max-w-md" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} className="h-36" />
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <Skeleton className="h-72" />
+        <Skeleton className="h-72" />
+      </div>
+    </div>
+  );
+}
+
 export function CargandoBloques({ n = 3 }: { n?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="Cargando">

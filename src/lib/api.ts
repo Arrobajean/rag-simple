@@ -2,7 +2,7 @@ import type { ChatEvent, MensajeEntrada } from "@/lib/chat/types";
 import type {
   Alerta, Cliente, Coincidencia, DatosSubida, Documento, EstadoLector, ExtraccionListada, FichaEdificio, FichaPropiedad,
   FiltrosPropiedades, FragmentoDocumento, HealthReport, ListaAlertas, ListaPropiedades, Resolucion, ResultadoBusqueda, Resumen,
-  SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion, RegistroBloqueo,
+  PanelCorredor, SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion, RegistroBloqueo,
 } from "@/lib/types";
 
 // Cliente HTTP del frontend: única capa que conoce las rutas de /api.
@@ -73,6 +73,7 @@ export const listarValoraciones = (f: { voto?: string; pagina?: number } = {}) =
 
 // ── Panel, propiedades, edificios ───────────────────────────────────────────────────────────────
 export const getResumen = () => request<Resumen>("/api/resumen");
+export const getPanelCorredor = () => request<PanelCorredor>("/api/panel/corredor");
 export const listarPropiedades = (f: FiltrosPropiedades) => request<ListaPropiedades>(`/api/propiedades${query({ ...f, limite: 25 })}`);
 export const getPropiedad = (ref: string) => request<FichaPropiedad>(`/api/propiedades/${encodeURIComponent(ref)}`);
 export const getEdificio = (ref: string) => request<FichaEdificio>(`/api/edificios/${encodeURIComponent(ref)}`);

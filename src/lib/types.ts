@@ -1,3 +1,4 @@
+import type { AdjuntoVista } from "@/lib/chat/adjuntos-tipos";
 import type { AccionUI, EjecucionHerramienta, FuenteDocumento } from "@/lib/chat/types";
 import type { CampoCatalogo, DatosExtraidos } from "@/lib/lector/catalogo";
 import type { Comparacion, ContextoLector, CandidatoInquilino, CandidatoUnidad } from "@/lib/lector/resolver";
@@ -16,6 +17,8 @@ export interface ChatMessage {
   herramientas?: EjecucionHerramienta[];
   fuentes?: FuenteDocumento[];
   acciones?: AccionUI[];
+  /** Archivos que adjuntó la persona (solo nombre y tipo; los bytes no se guardan). */
+  adjuntos?: AdjuntoVista[];
   /** El mensaje se está recibiendo por streaming. */
   enCurso?: boolean;
   error?: boolean;
@@ -101,6 +104,15 @@ export interface Resumen {
   ocupacionPorZona: { zona: string; unidades: number; alquiladas: number; disponibles: number; ocupacion_pct: number | null }[];
   alertas: { total: number; porTipo: Record<string, number> };
   documentos: number;
+  /** Cobros por mes de vencimiento (el último, el mes en curso, es parcial). Null si la migración 0013 aún no está aplicada. */
+  serieCobros: PuntoCobro[] | null;
+}
+
+export interface PuntoCobro {
+  /** "2026-09" */
+  mes: string;
+  emitido: number;
+  impagado: number;
 }
 
 export interface Alerta {
@@ -289,8 +301,88 @@ export interface RegistroAccion {
 
 export interface RegistroBloqueo {
   id: number;
-  motivo: "manipulacion" | "formato" | "fuera_de_alcance" | "demasiado_largo";
+  motivo: "manipulacion" | "formato" | "fuera_de_alcance" | "demasiado_largo" | "adjunto_sospechoso" | "adjunto_invalido";
   mensaje: string;
   usuario: string | null;
   created_at: string;
+}
+
+// ── Panel del corredor ──────────────────────────────────────────────────────────────────────────────
+export interface ItemAgenda {
+  tipo: string;
+  clave: string;
+  titulo: string;
+  /** Días de retraso, para vencer (negativo si ya caducó) o abierta, según el tipo */
+  dias: number;
+  /** 1 = hoy, 2 = esta semana, 3 = cuando se pueda */
+  nivel: 1 | 2 | 3;
+  importe: number | null;
+  ubicacion: string | null;
+  unidad_referencia: string | null;
+  contrato_referencia: string | null;
+}
+
+export interface AgendaHoy {
+  total: number;
+  por_nivel: { hoy: number; semana: number; luego: number };
+  importe_en_juego: number;
+  items: ItemAgenda[];
+}
+
+export interface Oportunidades {
+  unidades_con_interesados: number;
+  demandas_activas: number;
+  demandas_sin_oferta: number;
+  sin_oferta: { id: number; cliente: string; tipo: string; operacion: string; presupuesto_max: number | null }[];
+  items: {
+    unidad_id: number; referencia: string; ubicacion: string; operacion: string; precio: number | null; habitaciones: number | null;
+    clientes: number; mejor_puntuacion: number; mejor_cliente: string;
+  }[];
+}
+
+export interface IngresosRiesgo {
+  renta_en_riesgo: Record<"d30" | "d60" | "d90", { contratos: number; renta: number }>;
+  vacios: {
+    unidades: number;
+    renta_mensual: number;
+    dias_medios: number | null;
+    items: { id: number; referencia: string; ubicacion: string; precio: number; dias_vacio: number | null }[];
+  };
+}
+
+export interface Embudo {
+  dias: number;
+  disponibles: number;
+  reservadas: number;
+  alquileres: { actual: number; anterior: number };
+  ventas: { actual: number; anterior: number };
+}
+
+export interface PanelDocumentos {
+  por_confirmar: number;
+  con_dudas: number;
+  borradores: { id: number; documento_id: number; titulo: string; campos_dudosos: number; created_at: string }[];
+  clausulas_alta: number;
+  clausulas: { contrato: string; titulo: string; clausula: string | null }[];
+  indexado_error: number;
+  indexado_pendiente: number;
+  documentos: number;
+}
+
+export interface SaludAsistente {
+  dias: number;
+  positivas: number;
+  negativas: number;
+  fallos: { pregunta: string; comentario: string | null; created_at: string }[];
+}
+
+/** Cada bloque es null si su función SQL aún no está en la base (migración 0014) o falló. */
+export interface PanelCorredor {
+  agenda: AgendaHoy | null;
+  oportunidades: Oportunidades | null;
+  riesgo: IngresosRiesgo | null;
+  embudo: Embudo | null;
+  documentos: PanelDocumentos | null;
+  /** Solo administración */
+  salud: SaludAsistente | null;
 }

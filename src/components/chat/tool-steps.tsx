@@ -1,4 +1,4 @@
-import { AlertCircleIcon, CheckIcon, DatabaseIcon, FileSearchIcon, Loader2Icon } from "lucide-react";
+import { AlertCircleIcon, CheckIcon, DatabaseIcon, FileSearchIcon, Loader2Icon, ShieldCheckIcon } from "lucide-react";
 import AIReasoning from "@/components/smoothui/ai-reasoning";
 import type { EjecucionHerramienta } from "@/lib/chat/types";
 
@@ -17,7 +17,7 @@ export function ToolSteps({ pasos, enCurso }: { pasos: EjecucionHerramienta[]; e
     <AIReasoning isStreaming={enCurso}>
       <ul className="space-y-2 py-1" aria-label="Consultas realizadas">
         {pasos.map((p) => {
-          const Tipo = DE_DOCUMENTOS.has(p.nombre) ? FileSearchIcon : DatabaseIcon;
+          const Tipo = p.nombre === "revisar_adjuntos" ? ShieldCheckIcon : DE_DOCUMENTOS.has(p.nombre) ? FileSearchIcon : DatabaseIcon;
           return (
             <li key={p.id} className="flex items-start gap-2 text-xs leading-snug">
               <Tipo className="mt-0.5 size-3 shrink-0" />

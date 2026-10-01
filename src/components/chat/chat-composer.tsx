@@ -1,11 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, PaperclipIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AdjuntosChips } from "@/components/chat/adjuntos-chips";
 import { ContextMeter } from "@/components/chat/context-meter";
+import { useAdjuntos } from "@/hooks/use-adjuntos";
+import type { AdjuntoCliente } from "@/lib/adjuntos-cliente";
+import { MAX_ADJUNTOS, TEXTO_ADJUNTO_POR_DEFECTO, TIPOS_ADJUNTO } from "@/lib/chat/adjuntos-tipos";
 import { NOMBRE_ASISTENTE } from "@/lib/asistente";
 import type { ContextoChat } from "@/lib/chat-contexto";
 import { cn } from "@/lib/utils";
@@ -14,7 +18,7 @@ interface Props {
   loading: boolean;
   hayConversacion: boolean;
   contexto?: ContextoChat;
-  onSend: (question: string) => void;
+  onSend: (question: string, adjuntos?: AdjuntoCliente[]) => void;
   onStop: () => void;
   onNueva: () => void;
   onCopiar: () => void;
@@ -27,9 +31,12 @@ const MAX_ALTO_PX = 200;
 export function ChatComposer({ loading, hayConversacion, contexto, onSend, onStop, onNueva, onCopiar, onDescargar }: Props) {
   const [texto, setTexto] = React.useState("");
   const [copiado, setCopiado] = React.useState(false);
+  const [arrastrando, setArrastrando] = React.useState(false);
   const area = React.useRef<HTMLTextAreaElement>(null);
+  const selector = React.useRef<HTMLInputElement>(null);
   const reducir = useReducedMotion();
-  const puedeEnviar = texto.trim().length > 0 && !loading;
+  const { adjuntos, procesando, agregar, quitar, vaciar } = useAdjuntos();
+  const puedeEnviar = (texto.trim().length > 0 || adjuntos.length > 0) && !loading && !procesando;
 
   // Ajusta el alto al contenido (hasta un máximo)
   React.useLayoutEffect(() => {
@@ -41,9 +48,12 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
 
   const enviar = () => {
     if (!puedeEnviar) return;
-    onSend(texto);
+    onSend(texto.trim() || TEXTO_ADJUNTO_POR_DEFECTO, adjuntos);
     setTexto("");
+    vaciar();
   };
+
+  const hayArchivos = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
 
   const copiar = () => {
     onCopiar();
@@ -53,11 +63,42 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
 
   return (
     <div
+      onDragOver={(e) => {
+        if (!hayArchivos(e)) return;
+        e.preventDefault();
+        setArrastrando(true);
+      }}
+      onDragLeave={() => setArrastrando(false)}
+      onDrop={(e) => {
+        if (!hayArchivos(e)) return;
+        e.preventDefault();
+        setArrastrando(false);
+        void agregar(Array.from(e.dataTransfer.files));
+      }}
       className={cn(
-        "group/composer flex items-end gap-1.5 rounded-[28px] border bg-muted/50 p-1.5 shadow-xs transition-all duration-200",
-        "focus-within:border-foreground/20 focus-within:bg-muted/70 focus-within:shadow-md"
+        "group/composer flex flex-col rounded-[28px] border bg-muted/50 p-1.5 shadow-xs transition-all duration-200",
+        "focus-within:border-foreground/20 focus-within:bg-muted/70 focus-within:shadow-md",
+        arrastrando && "border-primary bg-primary/5"
       )}
     >
+      {(adjuntos.length > 0 || procesando) && (
+        <div className="flex items-center gap-2 px-2 pt-2 pb-1.5">
+          <AdjuntosChips adjuntos={adjuntos} onQuitar={quitar} />
+          {procesando && <span className="text-xs text-muted-foreground">Preparando…</span>}
+        </div>
+      )}
+      <input
+        ref={selector}
+        type="file"
+        multiple
+        hidden
+        accept={TIPOS_ADJUNTO.join(",")}
+        onChange={(e) => {
+          void agregar(Array.from(e.target.files ?? []));
+          e.target.value = ""; // permite volver a elegir el mismo archivo
+        }}
+      />
+      <div className="flex items-end gap-1.5">
       <DropdownMenu>
           <Tooltip>
             <TooltipTrigger
@@ -73,6 +114,10 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
             <TooltipContent>Más opciones</TooltipContent>
           </Tooltip>
           <DropdownMenuContent side="top" align="start" className="w-60">
+            <DropdownMenuItem disabled={adjuntos.length >= MAX_ADJUNTOS} onClick={() => selector.current?.click()}>
+              <PaperclipIcon /> Adjuntar imagen o PDF
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onNueva}>
               <SquarePenIcon /> Nueva conversación
             </DropdownMenuItem>
@@ -90,6 +135,12 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
         ref={area}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
+        onPaste={(e) => {
+          const archivos = Array.from(e.clipboardData.files);
+          if (archivos.length === 0) return; // texto normal: el navegador lo pega solo
+          e.preventDefault();
+          void agregar(archivos);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
@@ -141,6 +192,7 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
               </motion.button>
             )}
           </AnimatePresence>
+      </div>
       </div>
     </div>
   );

@@ -11,7 +11,10 @@ import { useSesion } from "@/hooks/use-sesion";
 import { useValoraciones } from "@/hooks/use-valoraciones";
 import { fecha, pct } from "@/lib/format";
 
-const MOTIVOS = { manipulacion: "Manipulación", formato: "Cambio de formato", fuera_de_alcance: "Fuera de alcance", demasiado_largo: "Muy largo" } as const;
+const MOTIVOS = {
+  manipulacion: "Manipulación", formato: "Cambio de formato", fuera_de_alcance: "Fuera de alcance", demasiado_largo: "Muy largo",
+  adjunto_sospechoso: "Archivo sospechoso", adjunto_invalido: "Archivo no válido",
+} as const;
 
 function Cifra({ titulo, valor, detalle }: { titulo: string; valor: string; detalle?: string }) {
   return (

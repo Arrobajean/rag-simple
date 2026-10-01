@@ -54,6 +54,8 @@ export interface ContextoHerramientas {
   acciones: PropuestaAccion[];
   /** Embedding de consultas (inyectable para tests). */
   embed?: (texto: string) => Promise<number[]>;
+  /** Sin herramientas de escritura: la conversación incluye archivos de terceros, cuyo contenido no es de fiar. */
+  soloLectura?: boolean;
 }
 
 export interface ResultadoHerramienta {
@@ -512,8 +514,11 @@ export const HERRAMIENTAS: Herramienta[] = [
   }),
 ];
 
-export function declaraciones() {
-  return HERRAMIENTAS.map((h) => {
+/** Herramientas que proponen cambios en los datos: se retiran cuando hay contenido de terceros en la conversación. */
+const HERRAMIENTAS_DE_ESCRITURA = new Set(["proponer_accion"]);
+
+export function declaraciones({ soloLectura = false }: { soloLectura?: boolean } = {}) {
+  return HERRAMIENTAS.filter((h) => !(soloLectura && HERRAMIENTAS_DE_ESCRITURA.has(h.nombre))).map((h) => {
     const json = z.toJSONSchema(h.schema, { target: "draft-7", io: "input" }) as Record<string, unknown>;
     delete json.$schema;
     return { name: h.nombre, description: h.descripcion, parametersJsonSchema: json };
@@ -530,6 +535,14 @@ export function describirLlamada(nombre: string, args: unknown): string {
 export async function ejecutarHerramienta(nombre: string, args: unknown, ctx: ContextoHerramientas): Promise<ResultadoHerramienta & { ok: boolean }> {
   const h = HERRAMIENTAS.find((x) => x.nombre === nombre);
   if (!h) return { ok: false, resultado: { error: `Herramienta desconocida: ${nombre}` }, resumen: "Herramienta desconocida" };
+  // Segunda barrera (la primera es no declararla): aunque el modelo la invente, no se ejecuta
+  if (ctx.soloLectura && HERRAMIENTAS_DE_ESCRITURA.has(nombre)) {
+    return {
+      ok: false,
+      resultado: { error: "Las modificaciones están desactivadas en esta conversación porque incluye archivos adjuntos. Dile al usuario que abra una conversación nueva para proponer cambios." },
+      resumen: "Modificaciones desactivadas con archivos adjuntos",
+    };
+  }
   const parsed = h.schema.safeParse(args ?? {});
   if (!parsed.success) {
     const detalle = parsed.error.issues.map((i) => `${i.path.join(".") || "args"}: ${i.message}`).join("; ");

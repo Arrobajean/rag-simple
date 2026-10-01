@@ -5,7 +5,8 @@ export function conversacionAMarkdown(mensajes: ChatMessage[]): string {
   const partes: string[] = [`# Conversación con el asistente\n`];
   for (const m of mensajes) {
     if (m.role === "user") {
-      partes.push(`**Tú** (${m.timestamp})\n\n${m.content}\n`);
+      const adjuntos = m.adjuntos?.length ? `\n_Archivos adjuntos: ${m.adjuntos.map((a) => a.nombre).join(", ")}_\n` : "";
+      partes.push(`**Tú** (${m.timestamp})\n\n${m.content}\n${adjuntos}`);
       continue;
     }
     const pasos = (m.herramientas ?? []).map((h) => `- ${h.descripcion}${h.resumen ? ` → ${h.resumen}` : ""}`);

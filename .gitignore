@@ -16,3 +16,6 @@ supabase/all-migrations.sql
 supabase/pendientes.sql
 # PDFs sintéticos generados por el seed
 seed-output/
+
+# Capturas temporales
+image*.png
