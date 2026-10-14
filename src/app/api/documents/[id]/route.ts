@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 import { describeError, getSupabaseClient } from "@/lib/rag";
 import { eliminarDocumento, TIPOS_DOCUMENTO } from "@/lib/documents/ingest";
+import { exigirAdmin, exigirEscritura } from "@/lib/auth";
 import { urlDeLectura } from "@/lib/documents/storage";
 
 const idNumerico = (v: string) => {
@@ -55,6 +56,8 @@ const CambiosSchema = z
   .partial();
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   try {
     const id = idNumerico((await ctx.params).id);
     if (!id) return NextResponse.json({ error: "Id no válido" }, { status: 400 });
@@ -70,6 +73,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  // Borrar es definitivo (fila, fragmentos y archivo): solo el administrador
+  const denegado = await exigirAdmin(_req);
+  if (denegado) return denegado;
   try {
     const id = idNumerico((await ctx.params).id);
     if (!id) return NextResponse.json({ error: "Id no válido" }, { status: 400 });

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getSupabaseClient } from "@/lib/rag";
 import { supabaseDb } from "@/lib/db";
 import { manejar } from "@/lib/api-server";
-import { sesionDe } from "@/lib/auth";
+import { exigirEscritura, sesionDe } from "@/lib/auth";
 
 export async function GET(req: Request) {
   return manejar(async () => {
@@ -17,6 +17,8 @@ export async function GET(req: Request) {
 
 /** Marca una alerta como resuelta o la pospone N días. */
 export async function POST(req: Request) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const { clave, accion, dias } = z
       .object({ clave: z.string().min(3).max(120), accion: z.enum(["resolver", "posponer"]), dias: z.number().int().min(1).max(90).optional() })

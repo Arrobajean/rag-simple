@@ -2,6 +2,7 @@ import { z } from "zod";
 import { supabaseDb } from "@/lib/db";
 import { supabaseRepo } from "@/lib/documents/repo";
 import { crearExtraccion } from "@/lib/lector/extraer";
+import { exigirEscritura } from "@/lib/auth";
 import { manejar } from "@/lib/api-server";
 
 export const maxDuration = 120;
@@ -23,6 +24,8 @@ export async function GET() {
 
 /** Lee un documento ya subido y crea su borrador de extracción. */
 export async function POST(req: Request) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const { documento_id } = z.object({ documento_id: z.number().int().positive() }).parse(await req.json());
     const r = await crearExtraccion(supabaseDb(), supabaseRepo(), documento_id);

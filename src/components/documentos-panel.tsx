@@ -13,12 +13,14 @@ import { SubidaDialog } from "@/components/documentos/subida-dialog";
 import { TablaDocumentos } from "@/components/documentos/tabla-documentos";
 import { CargandoBloques, ErrorCarga } from "@/components/panel/estado-carga";
 import { useDocumentos } from "@/hooks/use-documentos";
+import { useSesion } from "@/hooks/use-sesion";
 import { OPCIONES_TIPO_DOC } from "@/lib/etiquetas";
 import type { Documento } from "@/lib/types";
 
 export function DocumentosPanel() {
   const router = useRouter();
   const d = useDocumentos();
+  const { esAdmin } = useSesion();
   const [subida, setSubida] = React.useState(false);
   const documentos = d.lista.datos?.documentos ?? [];
 
@@ -65,7 +67,7 @@ export function DocumentosPanel() {
       ) : documentos.length === 0 ? (
         <DocumentsEmpty icon={<FileSearchIcon />} title="No hay documentos" description="Sube contratos, normas de comunidad, actas o inventarios para poder consultarlos desde el asistente." />
       ) : (
-        <TablaDocumentos documentos={documentos} leyendo={d.leyendo} onLeer={(id) => void d.leerConIA(id)} onAbrirLector={(id) => router.push(`/dashboard/lector/${id}`)} onEliminar={eliminar} />
+        <TablaDocumentos documentos={documentos} leyendo={d.leyendo} esAdmin={esAdmin} onLeer={(id) => void d.leerConIA(id)} onAbrirLector={(id) => router.push(`/dashboard/lector/${id}`)} onEliminar={eliminar} />
       )}
 
       {d.lista.datos && (

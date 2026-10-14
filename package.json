@@ -25,6 +25,7 @@
     "adjuntos:test": "tsx scripts/adjuntos-test.ts",
     "rag:eval": "tsx scripts/rag-eval.ts",
     "rag:test": "tsx scripts/rag-unit-test.ts",
+    "auth:test": "tsx scripts/auth-test.ts",
     "documentos:reindexar": "tsx scripts/reindexar-documentos.ts",
     "db:aplicar-pendientes": "tsx scripts/aplicar-pendientes.ts"
   },

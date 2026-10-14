@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { getSesion, logout } from "@/lib/api";
 
-type Rol = "gestor" | "admin" | null;
+type Rol = "gestor" | "admin" | "visitante" | null;
 
 interface Sesion {
   rol: Rol;

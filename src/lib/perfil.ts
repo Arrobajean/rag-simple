@@ -8,9 +8,11 @@ export function iniciales(nombre: string): string {
   return (partes[0][0] + (partes.length > 1 ? partes[partes.length - 1][0] : "")).toUpperCase();
 }
 
-export function etiquetaRol(rol: "gestor" | "admin" | null, abierto: boolean): string {
+export function etiquetaRol(rol: "gestor" | "admin" | "visitante" | null, abierto: boolean): string {
   if (abierto) return "Administrador";
-  return rol === "admin" ? "Administrador" : rol === "gestor" ? "Gestor" : "Invitado";
+  if (rol === "admin") return "Administrador";
+  if (rol === "gestor") return "Gestor";
+  return rol === "visitante" ? "Visitante" : "Invitado";
 }
 
 export function leerNombre(): string {

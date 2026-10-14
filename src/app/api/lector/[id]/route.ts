@@ -3,6 +3,7 @@ import { supabaseDb } from "@/lib/db";
 import { supabaseRepo } from "@/lib/documents/repo";
 import { urlDeLectura } from "@/lib/documents/storage";
 import { estadoLector, guardarBorrador } from "@/lib/lector/servicio";
+import { exigirEscritura } from "@/lib/auth";
 import { idDe, manejar } from "@/lib/api-server";
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -27,6 +28,8 @@ const CuerpoLector = z.object({
 
 /** Guarda el borrador editado; no toca las tablas reales. */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const id = idDe((await ctx.params).id);
     const b = CuerpoLector.parse(await req.json());

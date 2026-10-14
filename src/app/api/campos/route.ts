@@ -2,7 +2,7 @@ import { supabaseDb } from "@/lib/db";
 import { cargarCatalogo } from "@/lib/lector/catalogo";
 import { proponerCampo, SolicitudCampoSchema } from "@/lib/lector/campos";
 import { manejar } from "@/lib/api-server";
-import { sesionDe } from "@/lib/auth";
+import { exigirEscritura, sesionDe } from "@/lib/auth";
 
 /** Catálogo cerrado de campos y solicitudes de campos nuevos. */
 export async function GET() {
@@ -18,6 +18,8 @@ export async function GET() {
 
 /** Cualquier agente puede PROPONER un campo; solo un admin lo aprueba. */
 export async function POST(req: Request) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const datos = SolicitudCampoSchema.parse(await req.json());
     const s = await proponerCampo(supabaseDb(), datos, (await sesionDe(req))?.rol ?? null);

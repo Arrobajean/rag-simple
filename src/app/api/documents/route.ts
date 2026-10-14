@@ -4,6 +4,7 @@ import { describeError, getSupabaseClient } from "@/lib/rag";
 import { DatosDocumentoSchema, datosDeFormulario } from "@/lib/documents/api";
 import { crearDocumento, indexarTexto, subirEIndexar, type DatosDocumento } from "@/lib/documents/ingest";
 import { supabaseRepo } from "@/lib/documents/repo";
+import { exigirEscritura } from "@/lib/auth";
 import { MAX_BYTES, rutaNueva, urlDeSubida } from "@/lib/documents/storage";
 
 export const maxDuration = 300;
@@ -99,6 +100,8 @@ export async function GET(req: Request) {
  *  · JSON { contenido, titulo, …metadatos }: texto pegado.
  */
 export async function POST(req: Request) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   try {
     if (req.headers.get("content-type")?.includes("multipart/form-data")) {
       const form = await req.formData();

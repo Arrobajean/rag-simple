@@ -34,7 +34,7 @@ const query = (params: Record<string, string | number | boolean | undefined | nu
 // ── Sesión ──────────────────────────────────────────────────────────────────────────────────────
 export const login = (password: string) => sendJson<{ rol: string }>("/api/auth/login", { password });
 export const logout = () => sendJson<{ ok: boolean }>("/api/auth/logout", {});
-export const getSesion = () => request<{ rol: "gestor" | "admin" | null; abierto: boolean }>("/api/auth/me");
+export const getSesion = () => request<{ rol: "gestor" | "admin" | "visitante" | null; abierto: boolean }>("/api/auth/me");
 
 // ── Chat (streaming NDJSON) ─────────────────────────────────────────────────────────────────────
 export async function streamChat(messages: MensajeEntrada[], onEvent: (e: ChatEvent) => void, signal?: AbortSignal) {

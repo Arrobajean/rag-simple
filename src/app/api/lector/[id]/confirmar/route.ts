@@ -2,7 +2,7 @@ import { z } from "zod";
 import { supabaseDb } from "@/lib/db";
 import { confirmarExtraccion } from "@/lib/lector/servicio";
 import { idDe, manejar } from "@/lib/api-server";
-import { sesionDe } from "@/lib/auth";
+import { exigirEscritura, sesionDe } from "@/lib/auth";
 
 const Cuerpo = z.object({
   valores: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
@@ -13,6 +13,8 @@ const Cuerpo = z.object({
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const id = idDe((await ctx.params).id);
     const b = Cuerpo.parse(await req.json());

@@ -28,7 +28,7 @@ interface Props {
   onEliminar: (d: Documento) => void;
 }
 
-export function TablaDocumentos({ documentos, leyendo, onLeer, onAbrirLector, onEliminar }: Props) {
+export function TablaDocumentos({ documentos, leyendo, esAdmin = false, onLeer, onAbrirLector, onEliminar }: Props) {
   return (
     <div className="rounded-lg border">
       <Table>
@@ -74,9 +74,11 @@ export function TablaDocumentos({ documentos, leyendo, onLeer, onAbrirLector, on
                         {leyendo === d.id ? <Loader2Icon className="size-4 animate-spin" /> : <ScanTextIcon className="size-4" />}
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="size-8 hover:text-destructive" onClick={() => onEliminar(d)} aria-label={`Eliminar ${d.titulo}`}>
-                      <Trash2Icon className="size-4" />
-                    </Button>
+                    {esAdmin && (
+                      <Button variant="ghost" size="icon" className="size-8 hover:text-destructive" onClick={() => onEliminar(d)} aria-label={`Eliminar ${d.titulo}`}>
+                        <Trash2Icon className="size-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

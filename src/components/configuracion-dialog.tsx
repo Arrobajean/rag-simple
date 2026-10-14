@@ -17,7 +17,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   nombre: string;
   onNombre: (n: string) => void;
-  rol: "gestor" | "admin" | null;
+  rol: "gestor" | "admin" | "visitante" | null;
   abierto: boolean;
   onSalir: () => void;
 }

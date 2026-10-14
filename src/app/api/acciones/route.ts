@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ejecutarAccion } from "@/lib/acciones";
 import { manejar } from "@/lib/api-server";
-import { sesionDe } from "@/lib/auth";
+import { exigirEscritura, sesionDe } from "@/lib/auth";
 import { supabaseData } from "@/lib/chat/data";
 import { embedTexts, getSupabaseClient } from "@/lib/rag";
 
@@ -10,6 +10,8 @@ import { embedTexts, getSupabaseClient } from "@/lib/rag";
  * La base de datos vuelve a validar todo (lista cerrada de acciones, existencia de referencias, estados permitidos).
  */
 export async function POST(req: Request) {
+  const denegado = await exigirEscritura(req);
+  if (denegado) return denegado;
   return manejar(async () => {
     const { tipo, datos } = z.object({ tipo: z.string().min(1).max(60), datos: z.record(z.string(), z.unknown()) }).parse(await req.json());
     const sesion = await sesionDe(req);

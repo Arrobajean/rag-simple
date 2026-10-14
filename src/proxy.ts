@@ -8,7 +8,13 @@ export async function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
   const esApi = pathname.startsWith("/api/");
-  const publica = pathname === "/login" || pathname === "/api/auth/login" || pathname === "/api/auth/logout";
+  // /api/health lo llama el cron de Vercel (sin cookie) para que Supabase no se pause; LinkedIn redirige aquí sin sesión
+  const publica =
+    pathname === "/login" ||
+    pathname === "/api/auth/login" ||
+    pathname === "/api/auth/logout" ||
+    pathname === "/api/health" ||
+    pathname.startsWith("/api/auth/linkedin");
 
   const sesion = await verificarSesion(req.cookies.get(COOKIE)?.value);
   if (sesion || publica) {

@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { describeError, getSupabaseClient } from "@/lib/rag";
 import { eliminarDocumento, indexarDocumento } from "@/lib/documents/ingest";
 import { supabaseRepo } from "@/lib/documents/repo";
+import { exigirEscritura } from "@/lib/auth";
 import { sha256 } from "@/lib/documents/storage";
 
 export const maxDuration = 300;
 
 /** Indexa un documento cuyo archivo ya está en Storage (subida directa desde el navegador). */
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const denegado = await exigirEscritura(_req);
+  if (denegado) return denegado;
   try {
     const id = Number((await ctx.params).id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "Id no válido" }, { status: 400 });

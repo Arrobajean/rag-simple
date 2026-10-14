@@ -1,7 +1,8 @@
 // Control de acceso: cookie firmada (HMAC-SHA256) con rol. Funciona en el proxy y en las rutas
-// (solo usa Web Crypto). Roles: "gestor" (uso diario) y "admin" (además aprueba campos del catálogo).
+// (solo usa Web Crypto). Roles: "gestor" (uso diario), "admin" (además aprueba campos del catálogo
+// y ve valoraciones y auditoría) y "visitante" (cuenta de LinkedIn: usa la app como un gestor, sin funciones de admin).
 
-export type Rol = "gestor" | "admin";
+export type Rol = "gestor" | "admin" | "visitante";
 export interface Sesion {
   rol: Rol;
   exp: number;
@@ -16,9 +17,25 @@ function secreto(): string | null {
   return process.env.AUTH_SECRET || process.env.SUPABASE_KEY || null;
 }
 
-/** ¿Está el acceso configurado? En producción es obligatorio: sin contraseñas, nadie entra. */
-export function accesoConfigurado(): boolean {
+/** Contraseñas de la app (gestor y admin). */
+export function passwordConfigurado(): boolean {
   return !!(process.env.APP_PASSWORD || process.env.APP_ADMIN_PASSWORD);
+}
+
+/** Cliente OAuth de LinkedIn, si está completo. */
+export function configLinkedIn(): { clientId: string; clientSecret: string } | null {
+  const clientId = process.env.LINKEDIN_CLIENT_ID;
+  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
+}
+
+export function linkedinConfigurado(): boolean {
+  return configLinkedIn() !== null;
+}
+
+/** ¿Está el acceso configurado? En producción es obligatorio: sin contraseñas ni LinkedIn, nadie entra. */
+export function accesoConfigurado(): boolean {
+  return passwordConfigurado() || linkedinConfigurado();
 }
 
 /**
@@ -52,7 +69,7 @@ export async function verificarSesion(valor: string | undefined | null): Promise
     const ok = await crypto.subtle.verify("HMAC", await clave(), deB64(firma), enc.encode(payload));
     if (!ok) return null;
     const s = JSON.parse(new TextDecoder().decode(deB64(payload))) as Sesion;
-    return s.exp > Date.now() / 1000 && (s.rol === "gestor" || s.rol === "admin") ? s : null;
+    return s.exp > Date.now() / 1000 && (s.rol === "gestor" || s.rol === "admin" || s.rol === "visitante") ? s : null;
   } catch {
     return null;
   }
@@ -94,4 +111,10 @@ export async function exigirAdmin(req: Request): Promise<Response | null> {
   const s = await sesionDe(req);
   if (s?.rol === "admin") return null;
   return Response.json({ error: "Solo un administrador puede hacer esto" }, { status: 403 });
+}
+
+/** Cualquier sesión válida puede modificar datos (gestor, visitante o admin). Lo exclusivo del admin usa exigirAdmin. */
+export async function exigirEscritura(req: Request): Promise<Response | null> {
+  if (await sesionDe(req)) return null;
+  return Response.json({ error: "Necesitas iniciar sesión para modificar datos." }, { status: 403 });
 }

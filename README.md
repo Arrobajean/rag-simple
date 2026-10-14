@@ -46,6 +46,7 @@ pnpm agent:test -- --docs "¿Se permiten mascotas en Calle de Toledo 45?"
 pnpm lector:test                                 # lee los 3 PDFs de prueba y confirma
 pnpm rag:eval                                    # mide la búsqueda en documentos (aciertos, falsos positivos, umbral)
 pnpm rag:test                                    # pruebas de citas, troceado y Word (sin Gemini)
+pnpm auth:test                                   # pruebas del login: listas de acceso, roles y escrituras de visitantes
 ```
 
 ## Tras actualizar la búsqueda
@@ -60,7 +61,9 @@ pnpm documentos:reindexar                        # reindexa desde Storage (los e
 
 ## Seguridad
 
-- **La app está abierta por defecto** (sin login): cualquiera con la URL puede ver y borrar datos. Para exigir contraseña define `APP_REQUIRE_LOGIN=true`, `APP_PASSWORD` y `APP_ADMIN_PASSWORD`.
+- **La app está abierta por defecto** (sin login): cualquiera con la URL puede ver y borrar datos. Para exigir login define `APP_REQUIRE_LOGIN=true` y uno de estos métodos:
+  - **LinkedIn**: `LINKEDIN_CLIENT_ID` y `LINKEDIN_CLIENT_SECRET`. Cualquier cuenta de LinkedIn con email verificado entra como **visitante**: usa la app como un gestor (chat, documentos, lector, acciones), pero sin funciones de administrador (aprobar campos, ver valoraciones y auditoría, borrar documentos). `APP_ADMIN_EMAILS` define los administradores.
+  - **Contraseñas**: `APP_PASSWORD` (gestor) y `APP_ADMIN_PASSWORD` (admin).
 - La clave `service_role` solo se usa en el servidor. Las tablas tienen RLS activado sin políticas y las funciones no son ejecutables con la clave pública.
 - Los campos nuevos los aprueba un administrador y siempre entran como atributos tipados, nunca como columnas.
 - Los datos de inquilinos son **ficticios**. Antes de usar datos reales: plan de pago de Gemini (la capa gratuita puede usar los datos para entrenar) y autenticación por usuario con políticas RLS.
