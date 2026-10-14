@@ -3,7 +3,7 @@ import type { RepoDocumentos } from "../../src/lib/documents/repo";
 
 const COLUMNAS_EDITABLES = new Set([
   "estado_indexado", "error", "paginas", "embedding_model", "vigente", "hash_sha256", "storage_path", "titulo", "tipo",
-  "edificio_id", "unidad_id", "contrato_id", "fecha_documento",
+  "edificio_id", "unidad_id", "contrato_id", "fecha_documento", "procesando_desde",
 ]);
 
 /** Repositorio de documentos sobre PGlite con archivos en memoria (para probar la ingesta real). */
@@ -37,13 +37,18 @@ export function pgliteRepo(db: PGlite): RepoDocumentos & { archivosEnMemoria: Ma
       return r.rows[0] ? { id: Number(r.rows[0].id), paginas: r.rows[0].paginas } : null;
     },
     async reemplazarFragmentos(documentoId, filas) {
-      await db.query("delete from document_chunks where documento_id = $1", [documentoId]);
-      for (const f of filas) {
-        await db.query(
-          "insert into document_chunks (documento_id, orden, pagina, seccion, contenido, embedding, embedding_model) values ($1, $2, $3, $4, $5, $6::float8[], $7)",
-          [f.documento_id, f.orden, f.pagina, f.seccion, f.contenido, f.embedding, f.embedding_model]
-        );
-      }
+      // La misma función SQL que en producción: la prueba ejercita la escritura real
+      const payload = filas.map((f) => ({ ...f, embedding: `[${f.embedding.join(",")}]` }));
+      await db.query("select rpc_reemplazar_fragmentos($1, $2::jsonb)", [documentoId, JSON.stringify(payload)]);
+    },
+    async marcarAtascados(desde) {
+      const r = await db.query<{ id: number }>(
+        `update documentos set estado_indexado = 'error', procesando_desde = null,
+           error = 'Se interrumpió el procesamiento (tiempo agotado). Vuelve a subir el archivo.'
+         where estado_indexado = 'procesando' and procesando_desde < $1 returning id`,
+        [desde]
+      );
+      return r.rows.length;
     },
     async eliminar(id) {
       await db.query("delete from documentos where id = $1", [id]);

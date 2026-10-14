@@ -22,7 +22,11 @@
     "coste:check": "tsx scripts/coste-check.ts",
     "acciones:test": "tsx scripts/acciones-test.ts",
     "guardrails:test": "tsx scripts/guardrails-test.ts",
-    "adjuntos:test": "tsx scripts/adjuntos-test.ts"
+    "adjuntos:test": "tsx scripts/adjuntos-test.ts",
+    "rag:eval": "tsx scripts/rag-eval.ts",
+    "rag:test": "tsx scripts/rag-unit-test.ts",
+    "documentos:reindexar": "tsx scripts/reindexar-documentos.ts",
+    "db:aplicar-pendientes": "tsx scripts/aplicar-pendientes.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -31,6 +35,7 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "^1.49.0",
+    "mammoth": "^1.13.0",
     "motion": "^13.4.6",
     "next": "16.3.7",
     "next-themes": "^0.4.6",

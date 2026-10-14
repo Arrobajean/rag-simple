@@ -38,6 +38,7 @@ export function MessageSources({ fuentes }: { fuentes: FuenteDocumento[] }) {
                   {f.similitud !== null && <Badge variant="secondary" className="h-4 text-[10px]">{(f.similitud * 100).toFixed(0)} %</Badge>}
                 </div>
               </div>
+              {f.edificio && <p className="text-[11px] text-muted-foreground">{f.edificio}</p>}
               <p className="italic text-muted-foreground">&ldquo;{extracto(f.contenido, 320)}&rdquo;</p>
             </div>
           ))}

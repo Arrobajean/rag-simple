@@ -13,7 +13,7 @@ Asistente para agencias inmobiliarias de la Comunidad de Madrid. El chat **cuent
 | **Propiedades** | Explorador con filtros y ficha (contrato, inquilino, cobros, documentos, clientes interesados). |
 | **Alertas** | Vencimientos, actualización de renta, certificados, fianzas e impagos, calculados en vivo. |
 | **Clientes** | Cruce demanda ↔ oferta con puntuación. |
-| **Documentos** | PDF/MD/TXT en Storage privado, OCR de escaneos, troceado por cláusulas, versiones y vigencia. |
+| **Documentos** | PDF, Word, MD y TXT en Storage privado, OCR de escaneos, troceado por cláusulas, versiones y vigencia. |
 | **Lector de contratos** | PDF a la izquierda, datos a la derecha con confianza y cita; borrador aislado, catálogo cerrado de campos, comparación con la BD, revisor de cláusulas y auditoría. |
 
 ## Puesta en marcha
@@ -44,6 +44,18 @@ pnpm db:check                                    # aplica las migraciones
 pnpm seed:test                                   # carga el seed y comprueba coherencia
 pnpm agent:test -- --docs "¿Se permiten mascotas en Calle de Toledo 45?"
 pnpm lector:test                                 # lee los 3 PDFs de prueba y confirma
+pnpm rag:eval                                    # mide la búsqueda en documentos (aciertos, falsos positivos, umbral)
+pnpm rag:test                                    # pruebas de citas, troceado y Word (sin Gemini)
+```
+
+## Tras actualizar la búsqueda
+
+La migración `0017` añade el contexto de cada fragmento. Los documentos que ya estaban indexados conservan el embedding anterior hasta reindexarse:
+
+```bash
+pnpm db:migrate                                  # o pega pendientes.sql en el SQL Editor
+pnpm documentos:reindexar -- --dry-run           # lista qué se reindexará
+pnpm documentos:reindexar                        # reindexa desde Storage (los escaneos vuelven a pasar por OCR)
 ```
 
 ## Seguridad

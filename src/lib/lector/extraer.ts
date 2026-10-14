@@ -76,6 +76,8 @@ export async function extraerContrato(bytes: Uint8Array, campos: CampoCatalogo[]
 export async function crearExtraccion(db: Db, repo: RepoDocumentos, documentoId: number): Promise<{ id: number; avisos: string[] }> {
   const doc = await repo.obtener(documentoId);
   if (!doc?.storage_path) throw new Error("El documento no tiene archivo");
+  // El lector envía el archivo a Gemini como PDF: otros formatos no se le pueden dar
+  if (doc.mime && !doc.mime.includes("pdf")) throw new Error("El lector de contratos solo admite archivos PDF");
   const previas = await db.seleccionar<{ id: number; estado: string }>("extracciones", { igual: { documento_id: documentoId } });
   const abierta = previas.find((p) => p.estado === "borrador");
   if (abierta) return { id: abierta.id, avisos: [] };

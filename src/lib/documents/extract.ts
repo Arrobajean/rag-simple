@@ -15,8 +15,21 @@ export function esPdf(nombre: string, mime?: string | null) {
   return mime === "application/pdf" || nombre.toLowerCase().endsWith(".pdf");
 }
 
+export const MIME_DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+export function esDocx(nombre: string, mime?: string | null) {
+  return mime === MIME_DOCX || nombre.toLowerCase().endsWith(".docx");
+}
+
 /** Extrae el texto página a página. Para PDFs sin texto marca `escaneado` para que se aplique OCR. */
 export async function extraerPaginas(data: Uint8Array, nombre: string, mime?: string | null): Promise<Extraccion> {
+  if (esDocx(nombre, mime)) {
+    // Word no guarda la paginación en el archivo: todo el texto va como una sola página
+    const mammoth = await import("mammoth");
+    const { value } = await mammoth.extractRawText({ buffer: Buffer.from(data) });
+    const texto = normalizar(value);
+    return { paginas: texto ? [{ pagina: 1, texto }] : [], escaneado: false };
+  }
   if (!esPdf(nombre, mime)) {
     const texto = new TextDecoder("utf-8").decode(data);
     // Los archivos de texto pueden marcar páginas con saltos de página (\f)

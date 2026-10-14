@@ -3,9 +3,13 @@ import { ZodError } from "zod";
 import { describeError, getSupabaseClient } from "@/lib/rag";
 import { DatosDocumentoSchema, datosDeFormulario } from "@/lib/documents/api";
 import { crearDocumento, indexarTexto, subirEIndexar, type DatosDocumento } from "@/lib/documents/ingest";
+import { supabaseRepo } from "@/lib/documents/repo";
 import { MAX_BYTES, rutaNueva, urlDeSubida } from "@/lib/documents/storage";
 
 export const maxDuration = 300;
+
+/** Más que el tiempo máximo de la función: si sigue «procesando» pasado este plazo, el proceso se interrumpió. */
+const PLAZO_PROCESO_MS = 10 * 60_000;
 
 const SELECCION = `
   id, titulo, tipo, edificio_id, unidad_id, contrato_id, mime, paginas, vigente, fecha_documento,
@@ -51,6 +55,8 @@ function respuestaError(error: unknown, fallback: string) {
 /** Lista documentos con sus vínculos. Filtros: tipo, estado, edificio_id, unidad_id, q. */
 export async function GET(req: Request) {
   try {
+    // Un proceso interrumpido (la función se cortó por tiempo) deja el documento en «procesando» para siempre
+    await supabaseRepo().marcarAtascados(new Date(Date.now() - PLAZO_PROCESO_MS).toISOString()).catch(() => 0);
     const p = new URL(req.url).searchParams;
     let q = getSupabaseClient().from("documentos").select(SELECCION, { count: "exact" }).order("created_at", { ascending: false }).limit(500);
     if (p.get("tipo")) q = q.eq("tipo", p.get("tipo")!);

@@ -5,6 +5,7 @@ import { FILE_KIND_LABELS, fileKind, type FileKind } from "@/lib/file-kind";
 
 const KIND_STYLE: Record<FileKind, { icon: typeof FileIcon; iconClass: string; badgeClass: string }> = {
   pdf: { icon: FileIcon, iconClass: "text-red-500", badgeClass: "text-red-600 bg-red-500/10 border-red-500/20" },
+  docx: { icon: FileTextIcon, iconClass: "text-blue-500", badgeClass: "text-blue-600 bg-blue-500/10 border-blue-500/20" },
   md: { icon: FileCodeIcon, iconClass: "text-sky-500", badgeClass: "text-sky-600 bg-sky-500/10 border-sky-500/20" },
   txt: { icon: FileTextIcon, iconClass: "text-muted-foreground", badgeClass: "text-muted-foreground bg-muted" },
   other: { icon: FileTextIcon, iconClass: "text-muted-foreground", badgeClass: "text-muted-foreground bg-muted" },

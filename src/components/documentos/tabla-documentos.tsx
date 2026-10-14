@@ -49,7 +49,7 @@ export function TablaDocumentos({ documentos, leyendo, onLeer, onAbrirLector, on
               <TableRow key={d.id}>
                 <TableCell className="max-w-72">
                   <Link href={`/dashboard/documentos/${d.id}`} className="flex items-center gap-2 font-medium hover:underline">
-                    <FileKindIcon source={d.mime?.includes("pdf") ? "x.pdf" : d.mime?.includes("markdown") ? "x.md" : "x.txt"} />
+                    <FileKindIcon source={d.mime?.includes("pdf") ? "x.pdf" : d.mime?.includes("wordprocessingml") ? "x.docx" : d.mime?.includes("markdown") ? "x.md" : "x.txt"} />
                     <span className="truncate">{d.titulo}</span>
                   </Link>
                   <p className="text-xs text-muted-foreground">

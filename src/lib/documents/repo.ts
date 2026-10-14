@@ -31,6 +31,8 @@ export interface NuevoFragmento {
   pagina: number | null;
   seccion: string | null;
   contenido: string;
+  /** Título y tipo del documento: entran en el embedding y en la búsqueda por texto, no en lo que ve el modelo. */
+  contexto: string;
   embedding: number[];
   embedding_model: string;
 }
@@ -42,6 +44,8 @@ export interface RepoDocumentos {
   actualizar(id: number, cambios: Record<string, unknown>): Promise<void>;
   porHash(hash: string, excluirId?: number): Promise<{ id: number; paginas: number | null } | null>;
   reemplazarFragmentos(documentoId: number, filas: NuevoFragmento[]): Promise<void>;
+  /** Pasa a error los documentos que llevan «procesando» desde antes de `desde` (el proceso se interrumpió). */
+  marcarAtascados(desde: string): Promise<number>;
   eliminar(id: number): Promise<void>;
   archivos: {
     subir(ruta: string, data: Uint8Array, contentType: string): Promise<void>;
@@ -82,12 +86,20 @@ export function supabaseRepo(): RepoDocumentos {
       return data ?? null;
     },
     async reemplazarFragmentos(documentoId, filas) {
-      await supabase.from("document_chunks").delete().eq("documento_id", documentoId);
+      // Una sola transacción en la base de datos: si falla, quedan los fragmentos anteriores
       const payload = filas.map((f) => ({ ...f, embedding: `[${f.embedding.join(",")}]` }));
-      for (let i = 0; i < payload.length; i += 100) {
-        const { error } = await supabase.from("document_chunks").insert(payload.slice(i, i + 100));
-        if (error) throw new Error(`No se pudieron guardar los fragmentos: ${error.message}`);
-      }
+      const { error } = await supabase.rpc("rpc_reemplazar_fragmentos", { p_documento: documentoId, p_filas: payload });
+      if (error) throw new Error(`No se pudieron guardar los fragmentos: ${error.message}`);
+    },
+    async marcarAtascados(desde) {
+      const { data, error } = await supabase
+        .from("documentos")
+        .update({ estado_indexado: "error", procesando_desde: null, error: "Se interrumpió el procesamiento (tiempo agotado). Vuelve a subir el archivo." })
+        .eq("estado_indexado", "procesando")
+        .lt("procesando_desde", desde)
+        .select("id");
+      if (error) throw new Error(`No se pudieron revisar los documentos atascados: ${error.message}`);
+      return data?.length ?? 0;
     },
     async eliminar(id) {
       const { error } = await supabase.from("documentos").delete().eq("id", id);

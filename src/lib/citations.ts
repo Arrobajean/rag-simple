@@ -1,12 +1,19 @@
 import type { FuenteDocumento } from "@/lib/chat/types";
 
 /**
- * El modelo cita fragmentos como [F1] o [F2][F3]. Se convierten en enlaces Markdown internos
- * (`[F1](cita:F1)`) solo cuando el id corresponde a una fuente realmente recuperada; el resto se deja tal cual.
+ * El modelo cita fragmentos como [F1], [F2][F3] o [F1, F2]. Se convierten en enlaces Markdown internos
+ * (`[F1](cita:F1)`) solo cuando el id corresponde a una fuente realmente recuperada.
+ * Lo que no es una cita válida no se muestra como si lo fuera: una [F9] inventada desaparece, y los números
+ * sueltos ([56, 32, 64], identificadores de la ficha del edificio) se quitan.
  */
 export function enlazarCitas(texto: string, fuentes: FuenteDocumento[] = []): string {
   const ids = new Set(fuentes.map((f) => f.id));
-  return texto.replace(/\[(F\d+)\]/g, (m, id: string) => (ids.has(id) ? `[${id}](cita:${id})` : m));
+  return texto
+    .replace(/( ?)\[(F\d+(?:\s*,\s*F\d+)*)\]/g, (_m, espacio: string, grupo: string) => {
+      const validas = grupo.split(/\s*,\s*/).filter((id) => ids.has(id));
+      return validas.length ? espacio + validas.map((id) => `[${id}](cita:${id})`).join("") : "";
+    })
+    .replace(/ ?\[\d+(?:\s*,\s*\d+)*\]/g, "");
 }
 
 export const esCita = (href?: string) => !!href && href.startsWith("cita:");

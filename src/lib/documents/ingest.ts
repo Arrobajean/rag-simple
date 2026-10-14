@@ -64,15 +64,24 @@ export async function crearDocumento(
   return id;
 }
 
+/**
+ * Contexto que acompaña a cada fragmento al vectorizarlo: sin él, «La fianza se devolverá…» no dice de qué contrato
+ * ni de qué edificio es. Va en el embedding y en la búsqueda por texto; el modelo solo ve el fragmento.
+ */
+export const contextoDocumento = (titulo: string, tipo: string) => `${titulo} · ${tipo.replace(/_/g, " ")}`;
+
 /** Embeddings + inserción de fragmentos. Reemplaza los que hubiera. */
 export async function guardarFragmentos(documentoId: number, fragmentos: Fragmento[], { repo = supabaseRepo(), embed = vectorizar }: OpcionesIngesta = {}) {
-  const vectores = await embed(fragmentos.map((f) => f.contenido));
+  const doc = await repo.obtener(documentoId);
+  const contexto = contextoDocumento(doc?.titulo ?? "", doc?.tipo ?? "general");
+  const vectores = await embed(fragmentos.map((f) => `${contexto}\n${f.contenido}`));
   const filas: NuevoFragmento[] = fragmentos.map((f, i) => ({
     documento_id: documentoId,
     orden: f.orden,
     pagina: f.pagina,
     seccion: f.seccion,
     contenido: f.contenido,
+    contexto,
     embedding: vectores[i],
     embedding_model: EMBED_MODEL,
   }));
@@ -85,7 +94,7 @@ export async function indexarDocumento(documentoId: number, data?: Uint8Array, o
   const doc = await repo.obtener(documentoId);
   if (!doc) throw new Error(`Documento ${documentoId} no encontrado`);
 
-  await repo.actualizar(documentoId, { estado_indexado: "procesando", error: null });
+  await repo.actualizar(documentoId, { estado_indexado: "procesando", error: null, procesando_desde: new Date().toISOString() });
   try {
     if (!data && !doc.storage_path) throw new Error("El documento no tiene archivo");
     const bytes = data ?? (await repo.archivos.descargar(doc.storage_path!));
@@ -97,10 +106,10 @@ export async function indexarDocumento(documentoId: number, data?: Uint8Array, o
 
     await guardarFragmentos(documentoId, fragmentos, { ...opciones, repo });
     const totalPaginas = paginas.reduce((max, p) => Math.max(max, p.pagina), 0);
-    await repo.actualizar(documentoId, { estado_indexado: "indexado", paginas: totalPaginas, embedding_model: EMBED_MODEL, error: null });
+    await repo.actualizar(documentoId, { estado_indexado: "indexado", paginas: totalPaginas, embedding_model: EMBED_MODEL, error: null, procesando_desde: null });
     return { documento_id: documentoId, fragmentos: fragmentos.length, paginas: totalPaginas, ocr };
   } catch (err) {
-    await repo.actualizar(documentoId, { estado_indexado: "error", error: mensaje(err) });
+    await repo.actualizar(documentoId, { estado_indexado: "error", error: mensaje(err), procesando_desde: null });
     throw err;
   }
 }

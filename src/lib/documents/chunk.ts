@@ -129,28 +129,22 @@ function dividirLargo(parrafos: string[]): string[] {
   return salida;
 }
 
-/** Une los fragmentos diminutos (encabezados sueltos, notas) con el siguiente. */
+/**
+ * Une los fragmentos diminutos (encabezados sueltos, notas) con el anterior, pero solo dentro de la misma
+ * cláusula: antes se unían con el siguiente aunque fuera de otra cláusula, y el texto quedaba con la sección equivocada.
+ */
 function fusionarCortos(fragmentos: Fragmento[]): Fragmento[] {
   const salida: Fragmento[] = [];
-  let pendiente: Fragmento | null = null;
   for (const f of fragmentos) {
-    if (pendiente) {
-      // El pendiente era demasiado corto: se le añade este fragmento y se conserva su sección/página
-      f.contenido = pendiente.contenido + "\n" + f.contenido;
-      f.pagina = pendiente.pagina;
-      f.seccion = pendiente.seccion ?? f.seccion;
-      pendiente = null;
+    const anterior = salida[salida.length - 1];
+    const hayCorto = anterior && (anterior.contenido.length < MIN_CARACTERES || f.contenido.length < MIN_CARACTERES);
+    if (anterior && hayCorto && anterior.seccion === f.seccion) {
+      // Cada fragmento de una sección empieza con su cabecera: al unirlo, no se repite
+      const cuerpo = f.seccion && f.contenido.startsWith(f.seccion + "\n") ? f.contenido.slice(f.seccion.length + 1) : f.contenido;
+      anterior.contenido += "\n" + cuerpo;
+    } else {
+      salida.push({ ...f });
     }
-    if (f.contenido.length < MIN_CARACTERES) {
-      pendiente = f;
-      continue;
-    }
-    salida.push({ ...f });
-  }
-  if (pendiente) {
-    const ultimo = salida[salida.length - 1];
-    if (ultimo) ultimo.contenido += "\n" + pendiente.contenido;
-    else salida.push({ ...pendiente });
   }
   return salida.map((f, i) => ({ ...f, orden: i + 1 }));
 }

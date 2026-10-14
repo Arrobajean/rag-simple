@@ -34,7 +34,7 @@ function ZonaArchivo({ archivo, onElegir }: { archivo: File | null; onElegir: (f
         <>
           <UploadCloudIcon className="size-6 text-muted-foreground" />
           <span className="text-sm font-medium">Arrastra un archivo o haz clic</span>
-          <span className="text-xs text-muted-foreground">.pdf, .md, .txt · máx. 25 MB · los escaneos se leen con OCR</span>
+          <span className="text-xs text-muted-foreground">.pdf, .docx, .md, .txt · máx. 25 MB · los escaneos se leen con OCR</span>
         </>
       )}
       <input id="archivo-documento" type="file" accept={ACCEPTED_FILES} className="sr-only" onChange={(e) => onElegir(e.target.files?.[0])} />

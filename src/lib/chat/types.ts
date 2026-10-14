@@ -12,6 +12,8 @@ export interface FuenteDocumento {
   contenido: string;
   vigente: boolean;
   ambito: string;
+  /** Edificio al que pertenece el documento («E-00001 · Calle de Toledo, 45»). */
+  edificio: string | null;
   similitud: number | null;
 }
 
