@@ -6,6 +6,18 @@ export type Rol = "gestor" | "admin" | "visitante";
 export interface Sesion {
   rol: Rol;
   exp: number;
+  /** Identidad de la cuenta (solo el acceso por LinkedIn la aporta). */
+  nombre?: string;
+  email?: string;
+  foto?: string;
+}
+
+/** Datos con los que se firma la cookie. `nombre`, `email` y `foto` solo llegan del perfil de LinkedIn. */
+export interface DatosSesion {
+  rol: Rol;
+  nombre?: string | null;
+  email?: string | null;
+  foto?: string | null;
 }
 
 export const COOKIE = "rag_session";
@@ -55,8 +67,12 @@ async function clave(): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", enc.encode(s), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 
-export async function firmarSesion(rol: Rol): Promise<string> {
-  const payload = b64(enc.encode(JSON.stringify({ rol, exp: Math.floor(Date.now() / 1000) + DURACION_SEG } satisfies Sesion)));
+export async function firmarSesion(datos: DatosSesion): Promise<string> {
+  const sesion: Sesion = { rol: datos.rol, exp: Math.floor(Date.now() / 1000) + DURACION_SEG };
+  if (datos.nombre) sesion.nombre = datos.nombre.slice(0, 80);
+  if (datos.email) sesion.email = datos.email.slice(0, 160);
+  if (datos.foto) sesion.foto = datos.foto.slice(0, 600);
+  const payload = b64(enc.encode(JSON.stringify(sesion)));
   const firma = new Uint8Array(await crypto.subtle.sign("HMAC", await clave(), enc.encode(payload)));
   return `${payload}.${b64(firma)}`;
 }
@@ -69,7 +85,9 @@ export async function verificarSesion(valor: string | undefined | null): Promise
     const ok = await crypto.subtle.verify("HMAC", await clave(), deB64(firma), enc.encode(payload));
     if (!ok) return null;
     const s = JSON.parse(new TextDecoder().decode(deB64(payload))) as Sesion;
-    return s.exp > Date.now() / 1000 && (s.rol === "gestor" || s.rol === "admin" || s.rol === "visitante") ? s : null;
+    if (!(s.exp > Date.now() / 1000) || (s.rol !== "gestor" && s.rol !== "admin" && s.rol !== "visitante")) return null;
+    const texto = (v: unknown) => (typeof v === "string" ? v : undefined);
+    return { rol: s.rol, exp: s.exp, nombre: texto(s.nombre), email: texto(s.email), foto: texto(s.foto) };
   } catch {
     return null;
   }

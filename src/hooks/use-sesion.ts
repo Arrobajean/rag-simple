@@ -10,6 +10,9 @@ interface Sesion {
   rol: Rol;
   abierto: boolean;
   esAdmin: boolean;
+  /** Nombre y foto del usuario que ha iniciado sesión (solo LinkedIn los aporta). */
+  nombre: string | null;
+  conFoto: boolean;
   salir: () => Promise<void>;
 }
 
@@ -18,13 +21,13 @@ const SesionContext = React.createContext<Sesion | null>(null);
 /** Consulta /api/auth/me una sola vez para todo el panel (antes cada componente hacía su propia petición). */
 export function useSesionProvider(): Sesion {
   const router = useRouter();
-  const [estado, setEstado] = React.useState<{ rol: Rol; abierto: boolean }>({ rol: null, abierto: true });
+  const [estado, setEstado] = React.useState<{ rol: Rol; abierto: boolean; nombre: string | null; conFoto: boolean }>({ rol: null, abierto: true, nombre: null, conFoto: false });
 
   React.useEffect(() => {
     let cancelado = false;
     getSesion()
       .then((s) => {
-        if (!cancelado) setEstado({ rol: s.rol, abierto: s.abierto });
+        if (!cancelado) setEstado({ rol: s.rol, abierto: s.abierto, nombre: s.nombre, conFoto: s.conFoto });
       })
       .catch(() => undefined);
     return () => {

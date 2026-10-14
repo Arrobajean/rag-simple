@@ -307,6 +307,21 @@ export interface RegistroBloqueo {
   created_at: string;
 }
 
+// ── Registro de accesos (vista de administración) ─────────────────────────────────────────────────
+export interface RegistroAcceso {
+  id: number;
+  email: string | null;
+  rol: "admin" | "gestor" | "visitante";
+  metodo: "linkedin" | "contrasena";
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface ResumenAccesos {
+  total: number;
+  ultimas24h: number;
+}
+
 // ── Panel del corredor ──────────────────────────────────────────────────────────────────────────────
 export interface ItemAgenda {
   tipo: string;

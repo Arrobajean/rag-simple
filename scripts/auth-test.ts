@@ -50,8 +50,15 @@ caso("el acceso queda cerrado con APP_REQUIRE_LOGIN=true", () => {
 });
 
 caso("la sesión de visitante se verifica como visitante", async () => {
-  const s = await verificarSesion(await firmarSesion("visitante"));
+  const s = await verificarSesion(await firmarSesion({ rol: "visitante" }));
   assert.equal(s?.rol, "visitante");
+});
+
+caso("la identidad del perfil (nombre, email y foto) viaja en la sesión", async () => {
+  const s = await verificarSesion(await firmarSesion({ rol: "visitante", nombre: "Ada Lovelace", email: "ada@ejemplo.com", foto: "https://media.licdn.com/foto.jpg" }));
+  assert.equal(s?.nombre, "Ada Lovelace");
+  assert.equal(s?.email, "ada@ejemplo.com");
+  assert.equal(s?.foto, "https://media.licdn.com/foto.jpg");
 });
 
 caso("una petición sin sesión no puede escribir", async () => {
@@ -61,20 +68,20 @@ caso("una petición sin sesión no puede escribir", async () => {
 });
 
 caso("un visitante puede escribir como un gestor", async () => {
-  assert.equal(await exigirEscritura(peticion(await firmarSesion("visitante"))), null);
-  assert.equal(await exigirEscritura(peticion(await firmarSesion("gestor"))), null);
-  assert.equal(await exigirEscritura(peticion(await firmarSesion("admin"))), null);
+  assert.equal(await exigirEscritura(peticion(await firmarSesion({ rol: "visitante" }))), null);
+  assert.equal(await exigirEscritura(peticion(await firmarSesion({ rol: "gestor" }))), null);
+  assert.equal(await exigirEscritura(peticion(await firmarSesion({ rol: "admin" }))), null);
 });
 
 caso("un visitante no tiene funciones de administrador", async () => {
-  const res = await exigirAdmin(peticion(await firmarSesion("visitante")));
+  const res = await exigirAdmin(peticion(await firmarSesion({ rol: "visitante" })));
   assert.ok(res, "debería denegar");
   assert.equal(res.status, 403);
-  assert.equal(await exigirAdmin(peticion(await firmarSesion("admin"))), null);
+  assert.equal(await exigirAdmin(peticion(await firmarSesion({ rol: "admin" }))), null);
 });
 
 caso("una cookie falsificada no vale", async () => {
-  const firmada = await firmarSesion("visitante");
+  const firmada = await firmarSesion({ rol: "visitante" });
   const falsa = firmada.slice(0, firmada.lastIndexOf(".") + 1) + "AAAA";
   assert.equal(await verificarSesion(falsa), null);
 });

@@ -17,6 +17,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   nombre: string;
   onNombre: (n: string) => void;
+  /** El nombre viene de la cuenta (LinkedIn): no se edita aquí. */
+  nombreFijo?: boolean;
   rol: "gestor" | "admin" | "visitante" | null;
   abierto: boolean;
   onSalir: () => void;
@@ -31,7 +33,7 @@ function Seccion({ titulo, children }: { titulo: string; children: React.ReactNo
   );
 }
 
-export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, rol, abierto, onSalir }: Props) {
+export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, nombreFijo, rol, abierto, onSalir }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
   const { clear } = useChatAcciones();
   const total = useChatCantidad();
@@ -49,26 +51,30 @@ export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, rol,
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Configuración</DialogTitle>
-          <DialogDescription className="text-xs">Ajustes de este navegador. Aún no hay acceso por usuario: el perfil no se comparte.</DialogDescription>
+          <DialogDescription className="text-xs">Ajustes de este navegador.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 pt-1">
           <Seccion titulo="Perfil">
-            <form
-              className="flex items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                onNombre(borrador);
-                toast.success("Nombre actualizado");
-              }}
-            >
-              <div className="flex-1 space-y-1.5">
-                <Label htmlFor="cfg-nombre" className="text-xs">Nombre</Label>
-                <Input id="cfg-nombre" value={borrador} onChange={(e) => setBorrador(e.target.value)} maxLength={60} />
-              </div>
-              <Button type="submit" size="sm" disabled={!borrador.trim() || borrador.trim() === nombre}>Guardar</Button>
-            </form>
-            <p className="text-xs text-muted-foreground">Rol: {etiquetaRol(rol, abierto)}{abierto ? " · acceso abierto (sin login)" : ""}</p>
+            {nombreFijo ? (
+              <p className="text-sm font-medium">{nombre}</p>
+            ) : (
+              <form
+                className="flex items-end gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onNombre(borrador);
+                  toast.success("Nombre actualizado");
+                }}
+              >
+                <div className="flex-1 space-y-1.5">
+                  <Label htmlFor="cfg-nombre" className="text-xs">Nombre</Label>
+                  <Input id="cfg-nombre" value={borrador} onChange={(e) => setBorrador(e.target.value)} maxLength={60} />
+                </div>
+                <Button type="submit" size="sm" disabled={!borrador.trim() || borrador.trim() === nombre}>Guardar</Button>
+              </form>
+            )}
+            <p className="text-xs text-muted-foreground">{nombreFijo ? "Nombre de tu cuenta de LinkedIn · " : ""}Rol: {etiquetaRol(rol, abierto)}{abierto ? " · acceso abierto (sin login)" : ""}</p>
           </Seccion>
 
           <Seccion titulo="Apariencia">

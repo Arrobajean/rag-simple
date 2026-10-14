@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BellIcon, Building2Icon, FileTextIcon, LayoutDashboardIcon, MessageSquareIcon, ScanTextIcon, SlidersHorizontalIcon, StarIcon, UsersIcon,
+  BellIcon, Building2Icon, FileTextIcon, HistoryIcon, LayoutDashboardIcon, MessageSquareIcon, ScanTextIcon, SlidersHorizontalIcon, StarIcon, UsersIcon,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -36,6 +36,7 @@ const GRUPOS = [
     items: [
       { titulo: "Campos del catálogo", href: "/dashboard/campos", icono: SlidersHorizontalIcon },
       { titulo: "Valoraciones", href: "/dashboard/valoraciones", icono: StarIcon },
+      { titulo: "Accesos", href: "/dashboard/accesos", icono: HistoryIcon },
     ],
   },
 ];

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { registrarAcceso } from "@/lib/accesos";
 import { COOKIE, configLinkedIn, DURACION_SEG, firmarSesion, leerCookie } from "@/lib/auth";
 import { COOKIE_ESTADO, listasDeEntorno, RUTA_CALLBACK, rolDeEmail } from "@/lib/auth-linkedin";
 
@@ -37,13 +38,22 @@ export async function GET(req: Request) {
       cache: "no-store",
     });
     if (!perfilRes.ok) return fallo(req, "linkedin_perfil");
-    const perfil = (await perfilRes.json()) as { email?: string; email_verified?: boolean };
+    const perfil = (await perfilRes.json()) as {
+      email?: string;
+      email_verified?: boolean;
+      name?: string;
+      given_name?: string;
+      family_name?: string;
+      picture?: string;
+    };
     if (!perfil.email || perfil.email_verified !== true) return fallo(req, "linkedin_email");
 
     const rol = rolDeEmail(perfil.email, listasDeEntorno());
+    const nombre = perfil.name || [perfil.given_name, perfil.family_name].filter(Boolean).join(" ") || perfil.email.split("@")[0];
+    await registrarAcceso(req, { email: perfil.email, rol, metodo: "linkedin" });
 
     const res = NextResponse.redirect(new URL("/dashboard", req.url));
-    res.cookies.set(COOKIE, await firmarSesion(rol), {
+    res.cookies.set(COOKIE, await firmarSesion({ rol, nombre, email: perfil.email, foto: perfil.picture }), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

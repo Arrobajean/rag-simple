@@ -3,6 +3,7 @@ import type {
   Alerta, Cliente, Coincidencia, DatosSubida, Documento, EstadoLector, ExtraccionListada, FichaEdificio, FichaPropiedad,
   FiltrosPropiedades, FragmentoDocumento, HealthReport, ListaAlertas, ListaPropiedades, Resolucion, ResultadoBusqueda, Resumen,
   PanelCorredor, SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion, RegistroBloqueo,
+  RegistroAcceso, ResumenAccesos,
 } from "@/lib/types";
 
 // Cliente HTTP del frontend: única capa que conoce las rutas de /api.
@@ -34,7 +35,7 @@ const query = (params: Record<string, string | number | boolean | undefined | nu
 // ── Sesión ──────────────────────────────────────────────────────────────────────────────────────
 export const login = (password: string) => sendJson<{ rol: string }>("/api/auth/login", { password });
 export const logout = () => sendJson<{ ok: boolean }>("/api/auth/logout", {});
-export const getSesion = () => request<{ rol: "gestor" | "admin" | "visitante" | null; abierto: boolean }>("/api/auth/me");
+export const getSesion = () => request<{ rol: "gestor" | "admin" | "visitante" | null; abierto: boolean; nombre: string | null; conFoto: boolean }>("/api/auth/me");
 
 // ── Chat (streaming NDJSON) ─────────────────────────────────────────────────────────────────────
 export async function streamChat(messages: MensajeEntrada[], onEvent: (e: ChatEvent) => void, signal?: AbortSignal) {
@@ -70,6 +71,10 @@ export const enviarValoracion = (v: { voto: "up" | "down"; pregunta: string; res
 
 export const listarValoraciones = (f: { voto?: string; pagina?: number } = {}) =>
   request<{ resumen: ResumenValoraciones; items: Valoracion[]; total: number; acciones: RegistroAccion[]; bloqueos: RegistroBloqueo[] }>(`/api/chat/valoraciones${query(f)}`);
+
+// ── Registro de accesos (solo administradores) ──────────────────────────────────────────────────
+export const listarAccesos = (f: { metodo?: string; pagina?: number } = {}) =>
+  request<{ resumen: ResumenAccesos; items: RegistroAcceso[]; total: number }>(`/api/accesos${query(f)}`);
 
 // ── Panel, propiedades, edificios ───────────────────────────────────────────────────────────────
 export const getResumen = () => request<Resumen>("/api/resumen");

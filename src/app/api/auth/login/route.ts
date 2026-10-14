@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { registrarAcceso } from "@/lib/accesos";
 import { accesoConfigurado, COOKIE, DURACION_SEG, firmarSesion, rolPorContrasena } from "@/lib/auth";
 
 export async function POST(req: Request) {
@@ -12,8 +13,9 @@ export async function POST(req: Request) {
     await new Promise((r) => setTimeout(r, 800));
     return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
   }
+  await registrarAcceso(req, { rol, metodo: "contrasena" });
   const res = NextResponse.json({ rol });
-  res.cookies.set(COOKIE, await firmarSesion(rol), {
+  res.cookies.set(COOKIE, await firmarSesion({ rol }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
