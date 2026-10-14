@@ -51,12 +51,20 @@ const FORMATO: RegExp[] = [
   /\b(en|in)\s+(json|xml|yaml)\b/,
 ];
 
+// Solo sustantivos del dominio. Se quitaron palabras genéricas («lista», «cuántos», «madrid», «resumen»…) que
+// dejaban pasar peticiones ajenas («Dame una lista de recetas…»): ahora un tema ajeno nunca cuenta como dominio.
 const PALABRAS_DOMINIO =
-  /(propiedad|piso|atico|duplex|estudio|chalet|local|garaje|trastero|inmueble|vivienda|edificio|comunidad|zona|distrito|barrio|municipio|madrid|alquil|venta|vend|compra|temporada|habitaci|contrato|inquilin|propietari|cliente|demanda|renta|fianza|deposito|pago|cobro|moros|impag|alerta|venc|prorrog|documento|acta|norma|estatuto|inventario|certificado|incidencia|reparaci|averia|fontaner|electric|calefacc|ascensor|mascota|ocupacion|precio|superficie|m2|metros|dispon|libre|reforma|reservad|lector|catalogo|unidad|referencia|u-\d|e-\d|c-\d|lau|ley de vivienda|cuantos|cuantas|lista|muestrame|resumen)/;
+  /(propiedad|piso|atico|duplex|estudio|chalet|local|garaje|trastero|inmueble|vivienda|edificio|comunidad|zona|distrito|barrio|municipio|alquil|venta|vende|vender|venden|compra|temporada|habitaci|contrato|inquilin|propietari|cliente|demanda|renta|fianza|deposito|pago|cobro|moros|impag|alerta|vencimiento|vencen|vence|prorrog|documento|acta|norma|estatuto|inventario|certificado|incidencia|reparaci|averia|fontaner|electric|calefacc|ascensor|mascota|ocupacion|precio|superficie|m2|metros|reforma|reservad|lector|catalogo|unidad|referencia|u-\d|e-\d|c-\d|lau|ley de vivienda)/;
+
+// Temas que nunca son de la agencia: aunque mencionen un sustantivo del dominio, los revisa el clasificador
+const FUERA_DE_TEMA =
+  /\b(poema|poesia|cancion|letra de|chiste|cuento|novela|pelicula|receta|recetas|cocin|paella|tortilla|traduc|traduce|traducir|codigo|programa|funcion|script|python|javascript|typescript|capital de|mundial|futbol|partido|clima|tiempo hara|billete|horoscopo|astrolog|ensayo|redact)\b/;
 
 // Peticiones de interpretar un papel: aunque mencionen palabras del dominio, las revisa el clasificador
 const JUEGO_DE_ROL = /\b(actua|actues|actuas|comportate|hazte pasar|haz de|finge|pretende|simula|eres un|eres una|se un|se una|act as|pretend|roleplay|rol de)\b/;
 const SALUDO = /^\s*(hola|buenas|buenos dias|buenas tardes|gracias|muchas gracias|vale|ok|perfecto|genial|de acuerdo|si|no)\b[\s!.¡?]*$/;
+// Un mensaje corto que continúa la conversación empieza por un conector: «¿y en Getafe?», «pero en Chamberí»
+const SEGUIMIENTO = /^\s*¿?\s*(y|pero|en|para|de|tambien|solo)\b/;
 
 /** Reglas locales: instantáneas y gratuitas. */
 export function revisarConReglas(texto: string): ResultadoGuardrail {
@@ -68,7 +76,10 @@ export function revisarConReglas(texto: string): ResultadoGuardrail {
 }
 
 /** ¿Parece del dominio inmobiliario? Si sí, no hace falta gastar una llamada en clasificarlo. */
-export const pareceDelDominio = (texto: string) => PALABRAS_DOMINIO.test(norm(texto));
+export const pareceDelDominio = (texto: string) => {
+  const t = norm(texto);
+  return PALABRAS_DOMINIO.test(t) && !FUERA_DE_TEMA.test(t);
+};
 
 const PROMPT_CLASIFICADOR = `Clasifica el mensaje de un usuario de un asistente de GESTIÓN INMOBILIARIA (propiedades, edificios, contratos de alquiler, cobros, alertas, clientes, documentos de comunidad y normativa de arrendamientos en Madrid).
 - en_alcance: pregunta o petición sobre ese dominio, o un seguimiento breve de la conversación.
@@ -115,9 +126,10 @@ export async function revisarEntrada(texto: string, { hayHistorial = false, hayA
   if (!reglas.ok) return reglas;
   const rol = JUEGO_DE_ROL.test(norm(texto));
   if (SALUDO.test(norm(texto))) return { ok: true };
+  const ajeno = FUERA_DE_TEMA.test(norm(texto));
   if (!rol && pareceDelDominio(texto)) return { ok: true };
-  if (!rol && hayHistorial && texto.trim().length <= 60) return { ok: true };
-  if (!rol && hayAdjuntos && texto.trim().length <= 160) return { ok: true };
+  if (!rol && !ajeno && hayHistorial && texto.trim().length <= 60 && SEGUIMIENTO.test(norm(texto))) return { ok: true };
+  if (!rol && !ajeno && hayAdjuntos && texto.trim().length <= 160) return { ok: true };
 
   const categoria = await clasificar(texto);
   if (categoria === "manipulacion") return { ok: false, motivo: "manipulacion", respuesta: RESPUESTAS.manipulacion };

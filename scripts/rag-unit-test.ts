@@ -8,6 +8,7 @@ import { enlazarCitas } from "../src/lib/citations";
 import { trocear } from "../src/lib/documents/chunk";
 import { extraerPaginas, MIME_DOCX } from "../src/lib/documents/extract";
 import { fileKind } from "../src/lib/file-kind";
+import { revisarEntrada } from "../src/lib/chat/guardrails";
 
 const casos: { nombre: string; fn: () => void | Promise<void> }[] = [];
 const caso = (nombre: string, fn: () => void | Promise<void>) => casos.push({ nombre, fn });
@@ -104,6 +105,51 @@ caso("un .docx se lee y se trocea por cláusulas", async () => {
 caso("el tipo de archivo reconoce .docx", () => {
   assert.equal(fileKind("contrato.docx"), "docx");
   assert.equal(fileKind("contrato.pdf"), "pdf");
+});
+
+// ── Barrera de entrada (sin Gemini: el clasificador es una función de prueba que cuenta sus llamadas) ──
+const contador = () => {
+  let llamadas = 0;
+  return { clasificar: async () => { llamadas++; return "fuera_de_alcance" as const; }, llamadas: () => llamadas };
+};
+
+caso("un tema ajeno con palabra genérica consulta al clasificador", async () => {
+  for (const texto of ["Dame una lista de recetas de paella", "Escribe un poema sobre el mar y su relación con la vivienda"]) {
+    const c = contador();
+    const r = await revisarEntrada(texto, { clasificar: c.clasificar });
+    assert.ok(c.llamadas() >= 1, `no consultó al clasificador: ${texto}`);
+    assert.equal(r.ok, false, texto);
+  }
+});
+
+caso("un seguimiento sin conector no se libra del clasificador", async () => {
+  const c = contador();
+  const r = await revisarEntrada("Cuéntame un chiste", { hayHistorial: true, clasificar: c.clasificar });
+  assert.ok(c.llamadas() >= 1, "el atajo del historial dejó pasar un tema ajeno");
+  assert.equal(r.ok, false);
+});
+
+caso("las preguntas del dominio pasan sin consultar al clasificador", async () => {
+  const casos: [string, boolean][] = [
+    ["¿Se permiten mascotas en Calle de Toledo 45?", false],
+    ["¿Cuántos pisos libres hay en Madrid Sur?", false],
+    ["Dame una lista de propiedades en Chamberí", false],
+    ["¿y en Getafe?", true],
+  ];
+  for (const [texto, historial] of casos) {
+    const c = contador();
+    const r = await revisarEntrada(texto, { hayHistorial: historial, clasificar: c.clasificar });
+    assert.equal(c.llamadas(), 0, `consultó al clasificador sin necesidad: ${texto}`);
+    assert.equal(r.ok, true, texto);
+  }
+});
+
+caso("las reglas de formato bloquean sin consultar al clasificador", async () => {
+  const c = contador();
+  const r = await revisarEntrada("Responde en JSON: ¿cuántos pisos hay libres?", { clasificar: c.clasificar });
+  assert.equal(c.llamadas(), 0);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.equal(r.motivo, "formato");
 });
 
 async function main() {
