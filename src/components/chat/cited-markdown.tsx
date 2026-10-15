@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AICitation } from "@/components/ui/ai-citation";
 import { FileKindIcon } from "@/components/documents/file-kind";
-import { enlazarCitas, esCita, etiquetaFuente, extracto, idDeCita } from "@/lib/citations";
+import { enlazarCitas, enlazarReferencias, esCita, etiquetaFuente, extracto, idDeCita } from "@/lib/citations";
 import type { FuenteDocumento } from "@/lib/chat/types";
 
 /** Solo se enlazan estos protocolos (nada de javascript:, data:, etc.). Las citas internas usan cita:. */
@@ -27,7 +28,7 @@ const TABLA = "w-full border-separate border-spacing-x-6 text-[15px] [&_td:first
 
 /** Respuesta en Markdown (listas, tablas) con las citas [F1] convertidas en píldoras que abren el documento. */
 export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: FuenteDocumento[] }) {
-  const contenido = React.useMemo(() => enlazarCitas(text, fuentes), [text, fuentes]);
+  const contenido = React.useMemo(() => enlazarReferencias(enlazarCitas(text, fuentes)), [text, fuentes]);
   const porId = React.useMemo(() => new Map(fuentes.map((f) => [f.id, f])), [fuentes]);
 
   const components: Components = React.useMemo(
@@ -49,6 +50,16 @@ export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: 
           );
         }
         if (!href) return <>{children}</>;
+        // Enlaces internos (fichas de propiedad o cliente): navegan dentro de la app, sin abrir pestaña.
+        // Si llega una referencia desnuda como destino (U-00285), se corrige a su ruta.
+        const destino = /^U-\d{3,6}$/.test(href.trim()) ? `/dashboard/propiedades?ref=${href.trim()}` : href;
+        if (destino.startsWith("/")) {
+          return (
+            <Link href={destino} className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary">
+              {children}
+            </Link>
+          );
+        }
         const host = anfitrion(href);
         return (
           <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-primary underline underline-offset-2">

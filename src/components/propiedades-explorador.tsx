@@ -8,9 +8,10 @@ import { TablaPropiedades } from "@/components/propiedades/tabla-propiedades";
 import { usePropiedades } from "@/hooks/use-propiedades";
 import type { FiltrosPropiedades } from "@/lib/types";
 
-export function PropiedadesExplorador({ inicial }: { inicial?: FiltrosPropiedades }) {
+export function PropiedadesExplorador({ inicial, refInicial }: { inicial?: FiltrosPropiedades; refInicial?: string }) {
   const { datos, loading, error, recargar, filtros, cambiar, limpiar, hayFiltros, pagina, totalPaginas } = usePropiedades(inicial);
-  const [abierta, setAbierta] = React.useState<string | null>(null);
+  // Si se llega con ?ref= (por ejemplo, desde un enlace del asistente), la ficha se abre al montar
+  const [abierta, setAbierta] = React.useState<string | null>(refInicial ?? null);
 
   const ordenar = (orden: string) =>
     cambiar({ orden, direccion: filtros.orden === orden && filtros.direccion !== "desc" ? "desc" : "asc" });

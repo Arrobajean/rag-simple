@@ -4,10 +4,10 @@ import * as React from "react";
 import { getCoincidenciasCliente, listarClientes } from "@/lib/api";
 import { useCarga } from "@/hooks/use-carga";
 
-export function useClientes() {
+export function useClientes(inicial: number | null = null) {
   const [busqueda, setBusqueda] = React.useState("");
   const [consulta, setConsulta] = React.useState("");
-  const [seleccionado, setSeleccionado] = React.useState<number | null>(null);
+  const [seleccionado, setSeleccionado] = React.useState<number | null>(inicial);
 
   // Espera a que el usuario deje de teclear antes de consultar
   React.useEffect(() => {

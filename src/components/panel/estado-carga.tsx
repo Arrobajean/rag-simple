@@ -33,6 +33,27 @@ export function CargandoBloques({ n = 3 }: { n?: number }) {
   );
 }
 
+/** Esqueleto de la ficha lateral: mantiene la forma para que no parpadee el error mientras carga. */
+export function CargandoFicha() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Cargando ficha">
+      <Skeleton className="h-36 w-full rounded-xl" />
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-28" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <Skeleton className="h-28 w-full rounded-xl" />
+    </div>
+  );
+}
+
 export function ErrorCarga({ mensaje, onReintentar }: { mensaje: string; onReintentar?: () => void }) {
   return (
     <div role="alert" className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">

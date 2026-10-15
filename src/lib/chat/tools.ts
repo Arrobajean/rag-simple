@@ -159,8 +159,8 @@ export const HERRAMIENTAS: Herramienta[] = [
       "Úsala para '¿cuáles son…?', 'las 5 más baratas', 'pisos con terraza en Chamberí'. Cada elemento incluye edificio_referencia por si luego hay que consultar sus documentos.",
     schema: z.object({
       filtros: FiltrosSchema.optional(),
-      orden: z.enum(["precio", "superficie", "precio_m2", "habitaciones", "fecha_disponible", "referencia"]).optional(),
-      direccion: z.enum(["asc", "desc"]).optional(),
+      orden: z.enum(["precio", "superficie", "precio_m2", "habitaciones", "fecha_disponible", "referencia"]).optional().describe("Campo de orden. Usa 'precio' para comparar precio."),
+      direccion: z.enum(["asc", "desc"]).optional().describe("asc = de menor a mayor (más barato/pequeño PRIMERO); desc = de mayor a menor (más caro/grande PRIMERO). Por defecto asc. Para 'el más caro' usa direccion='desc'."),
       limite: z.number().int().min(1).max(25).optional().describe("Por defecto 10"),
     }),
     describir: (a) => `Listar propiedades · ${describirFiltros(a.filtros)}${a.orden ? ` · orden ${a.orden} ${a.direccion ?? "asc"}` : ""}`,
@@ -208,6 +208,83 @@ export const HERRAMIENTAS: Herramienta[] = [
       if (!r) return { resultado: { error: `No existe la propiedad ${a.referencia}` }, resumen: "No encontrada" };
       const u = r.unidad as Record<string, unknown>;
       return { resultado: r, resumen: `${u.referencia} · ${u.ubicacion}` };
+    },
+  }),
+
+  definir({
+    nombre: "contexto_propiedad",
+    descripcion:
+      "Contexto comparativo de UNA propiedad dentro de la cartera: su POSICIÓN por precio entre las de su mismo tipo y operación, la media de ese grupo, la media de su distrito/municipio/zona, cuánto se aparta de ellas y las unidades vecinas en precio (lo que hay justo por encima y por debajo). " +
+      "Úsala para preguntas de superlativo o comparación ('el más caro', 'el más barato', 'el más grande', 'cómo está de precio', '¿es caro?'). Necesita la referencia (U-00012); localízala antes con listar_propiedades si solo tienes una dirección.",
+    schema: z.object({
+      referencia: z.string().describe("Referencia de la unidad, p. ej. U-00012"),
+      comparar_con: z.enum(["distrito", "municipio", "zona"]).optional().describe("Ámbito de la comparación de zona. Por defecto: distrito si es Madrid capital; si no, municipio."),
+    }),
+    describir: (a) => `Contexto comparativo de ${a.referencia}`,
+    async ejecutar(a, ctx) {
+      const ficha = await ctx.data.rpc<Record<string, unknown> | null>("rpc_ficha_unidad", { p_ref: a.referencia });
+      if (!ficha) return { resultado: { error: `No existe la propiedad ${a.referencia}` }, resumen: "No encontrada" };
+      const u = ficha.unidad as Record<string, unknown>;
+      const operacion = String(u.operacion);
+      const tipo = String(u.tipo);
+      const precio = num(u.precio);
+
+      const stats = async (f: Record<string, unknown>) =>
+        (await ctx.data.rpc<Record<string, unknown>[]>("rpc_contar_agrupar", { f }))[0] ?? {};
+      const esVenta = operacion === "venta";
+      const medioDe = (r: Record<string, unknown>) => (esVenta ? num(r.venta_media) : num(r.alquiler_medio));
+      const medioM2De = (r: Record<string, unknown>) => (esVenta ? num(r.venta_m2_medio) : num(r.alquiler_m2_medio));
+
+      // Grupo de comparación: mismo tipo y operación
+      const grupo = await stats({ operacion: [operacion], tipo: [tipo] });
+      const total = num(grupo.total) ?? 0;
+      const media = medioDe(grupo);
+      const mediaM2 = medioM2De(grupo);
+
+      // Posición por precio: cuántas hay estrictamente más caras + 1
+      let posicion: number | null = null;
+      if (precio !== null) {
+        const delta = esVenta ? 1 : 0.01;
+        const arriba = await stats({ operacion: [operacion], tipo: [tipo], precio_min: precio + delta });
+        posicion = (num(arriba.total) ?? 0) + 1;
+      }
+
+      // Comparación con la zona (distrito/municipio/zona)
+      const ambito = a.comparar_con ?? (u.distrito ? "distrito" : "municipio");
+      const nombreZona = (ambito === "distrito" ? u.distrito : ambito === "municipio" ? u.municipio : u.zona) as string | null;
+      let zona: Record<string, unknown> | null = null;
+      if (nombreZona) {
+        const fz: Record<string, unknown> = { operacion: [operacion], tipo: [tipo] };
+        fz[ambito] = [nombreZona];
+        const zr = await stats(fz);
+        zona = { ambito, nombre: nombreZona, total: num(zr.total), precio_medio: medioDe(zr), precio_m2_medio: medioM2De(zr) };
+      }
+
+      // Vecinos en precio: la ventana alrededor de esta unidad (una por encima y por debajo)
+      const offset = Math.max(0, (posicion ?? 1) - 2);
+      const lista = await ctx.data.rpc<{ total: number; items: Record<string, unknown>[] }>("rpc_listar_unidades", {
+        f: { operacion: [operacion], tipo: [tipo] }, orden: "precio", direccion: "desc", limite: 4, desplazamiento: offset,
+      });
+      const vecinos = lista.items.map((i) => ({
+        referencia: i.referencia, ubicacion: i.ubicacion, precio: num(i.precio), precio_m2: num(i.precio_m2), superficie_m2: num(i.superficie_m2),
+      }));
+
+      const diferencia = precio !== null && media ? Math.round(((precio - media) / media) * 1000) / 10 : null;
+
+      return {
+        resultado: {
+          propiedad: {
+            referencia: u.referencia, ubicacion: u.ubicacion, tipo, operacion, estado: u.estado,
+            precio, precio_m2: num(u.precio_m2), superficie_m2: num(u.superficie_m2), habitaciones: num(u.habitaciones), banos: num(u.banos),
+          },
+          posicion: posicion !== null ? { puesto: posicion, de: total, criterio: `precio entre ${tipo}s en ${operacion}` } : null,
+          grupo: { total, precio_medio: media, precio_m2_medio: mediaM2, diferencia_pct: diferencia },
+          zona,
+          vecinos,
+          nota: "diferencia_pct es cuánto se aparta esta propiedad de la media de su grupo (positivo = más cara). «vecinos» son las unidades de precio más cercano, para ofrecer alternativas.",
+        },
+        resumen: posicion !== null ? `${u.referencia} · puesto ${posicion} de ${total} ${tipo}s en ${operacion}` : String(u.referencia),
+      };
     },
   }),
 

@@ -16,6 +16,28 @@ export function enlazarCitas(texto: string, fuentes: FuenteDocumento[] = []): st
     .replace(/ ?\[\d+(?:\s*,\s*\d+)*\]/g, "");
 }
 
+/** Referencias de propiedad que el modelo escribe en el texto ("U-00285"). */
+const REF_UNIDAD = /\bU-\d{3,6}\b/g;
+/** Marcas de la zona privada de Unicode para apartar temporalmente enlaces y código ya presentes. */
+const ABRE = "\uE000";
+const CIERRA = "\uE001";
+
+/**
+ * Convierte las referencias de propiedad (U-00285) en enlaces internos a su ficha.
+ * No toca lo que ya es un enlace ni el código en línea, para no anidar enlaces.
+ */
+export function enlazarReferencias(texto: string): string {
+  const guardado: string[] = [];
+  return (
+    texto
+      // A veces el modelo escribe la referencia como destino del propio enlace: [U-00285](U-00285). Se corrige a la ruta real.
+      .replace(/\[([^\]]*)\]\((U-\d{3,6})\)/g, (_m, textoEnlace: string, ref: string) => `[${textoEnlace}](/dashboard/propiedades?ref=${ref})`)
+      .replace(/(`[^`]*`|\[[^\]]*\]\([^)]*\))/g, (m) => `${ABRE}${guardado.push(m) - 1}${CIERRA}`)
+      .replace(REF_UNIDAD, (ref) => `[${ref}](/dashboard/propiedades?ref=${ref})`)
+      .replace(new RegExp(`${ABRE}(\\d+)${CIERRA}`, "g"), (_m, i: string) => guardado[Number(i)])
+  );
+}
+
 export const esCita = (href?: string) => !!href && href.startsWith("cita:");
 export const idDeCita = (href: string) => href.slice("cita:".length);
 

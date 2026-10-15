@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { FuenteDocumento } from "../src/lib/chat/types";
-import { enlazarCitas } from "../src/lib/citations";
+import { enlazarCitas, enlazarReferencias } from "../src/lib/citations";
 import { trocear } from "../src/lib/documents/chunk";
 import { extraerPaginas, MIME_DOCX } from "../src/lib/documents/extract";
 import { fileKind } from "../src/lib/file-kind";
@@ -55,6 +55,38 @@ caso("un número suelto entre corchetes se quita sin tocar las citas válidas", 
 
 caso("sin fragmentos no queda ningún corchete de cita", () => {
   assert.equal(enlazarCitas("No consta en los documentos [F1].", []), "No consta en los documentos.");
+});
+
+// ── Referencias de propiedad (enlaces a la ficha) ────────────────────────────────────────────────
+caso("una referencia de propiedad se convierte en enlace a su ficha", () => {
+  assert.equal(enlazarReferencias("El piso U-00285 sube."), "El piso [U-00285](/dashboard/propiedades?ref=U-00285) sube.");
+});
+
+caso("varias referencias se enlazan por separado", () => {
+  assert.equal(
+    enlazarReferencias("U-00001 y U-00002"),
+    "[U-00001](/dashboard/propiedades?ref=U-00001) y [U-00002](/dashboard/propiedades?ref=U-00002)"
+  );
+});
+
+caso("una referencia ya enlazada no se vuelve a enlazar", () => {
+  const ya = "[U-00285](/dashboard/propiedades?ref=U-00285)";
+  assert.equal(enlazarReferencias(ya), ya);
+});
+
+caso("una referencia dentro de código en línea no se enlaza", () => {
+  assert.equal(enlazarReferencias("`U-00285`"), "`U-00285`");
+});
+
+caso("un enlace con la referencia como destino se corrige a la ruta real", () => {
+  assert.equal(enlazarReferencias("Ver [U-00723](U-00723)."), "Ver [U-00723](/dashboard/propiedades?ref=U-00723).");
+});
+
+caso("las citas y las referencias conviven en el mismo texto", () => {
+  assert.equal(
+    enlazarReferencias(enlazarCitas("Según [F1] el piso U-00001.", fuentes)),
+    "Según [F1](cita:F1) el piso [U-00001](/dashboard/propiedades?ref=U-00001)."
+  );
 });
 
 // ── Troceado ───────────────────────────────────────────────────────────────────────────────────

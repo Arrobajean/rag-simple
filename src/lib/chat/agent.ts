@@ -167,5 +167,30 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
     });
   }
 
+  // Si se agotaron las iteraciones con consultas pendientes y aún no hay respuesta, una última
+  // pasada SIN herramientas para que el modelo conteste con lo que ya ha recogido.
+  if (!respuesta.trim() && !signal?.aborted) {
+    const stream = await conModelos(chatModel(), (model) =>
+      client.models.generateContentStream({
+        model,
+        contents,
+        config: {
+          systemInstruction: systemPrompt(hoy, { conAdjuntos, marca }) + "\n\nYa no puedes consultar más herramientas: responde ahora con la información que tengas.",
+          temperature: 0.3,
+          maxOutputTokens: 2048,
+          abortSignal: signal,
+        },
+      })
+    );
+    for await (const chunk of stream) {
+      for (const parte of chunk.candidates?.[0]?.content?.parts ?? []) {
+        if (parte.text && !parte.thought) {
+          respuesta += parte.text;
+          onEvent({ type: "text", delta: parte.text });
+        }
+      }
+    }
+  }
+
   return respuesta;
 }

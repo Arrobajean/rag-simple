@@ -1,23 +1,14 @@
 import Link from "next/link";
 import { FileTextIcon, UserRoundIcon, WrenchIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SeccionFicha } from "@/components/propiedades/ficha-seccion";
 import { eur, fecha } from "@/lib/format";
 import { tipoDocumento } from "@/lib/etiquetas";
 import type { FichaPropiedad } from "@/lib/types";
 
-function Titulo({ icono: Icono, children }: { icono: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
-  return (
-    <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-      <Icono className="size-3.5" />
-      {children}
-    </h3>
-  );
-}
-
 export function FichaDocumentos({ documentos }: { documentos: FichaPropiedad["documentos"] }) {
   return (
-    <section className="space-y-2" aria-label="Documentos">
-      <Titulo icono={FileTextIcon}>Documentos ({documentos.length})</Titulo>
+    <SeccionFicha icono={FileTextIcon} titulo="Documentos" extra={documentos.length}>
       {documentos.length === 0 && <p className="text-sm text-muted-foreground">Sin documentos vinculados.</p>}
       <ul className="space-y-1">
         {documentos.map((d) => (
@@ -32,38 +23,36 @@ export function FichaDocumentos({ documentos }: { documentos: FichaPropiedad["do
           </li>
         ))}
       </ul>
-    </section>
+    </SeccionFicha>
   );
 }
 
 export function FichaIncidencias({ incidencias }: { incidencias: FichaPropiedad["incidencias"] }) {
   if (incidencias.length === 0) return null;
   return (
-    <section className="space-y-2" aria-label="Incidencias">
-      <Titulo icono={WrenchIcon}>Incidencias recientes</Titulo>
+    <SeccionFicha icono={WrenchIcon} titulo="Incidencias recientes" extra={incidencias.length}>
       <ul className="space-y-1 text-sm">
         {incidencias.map((i, n) => (
-          <li key={n} className="flex items-center justify-between gap-2 rounded-md border px-3 py-1.5">
+          <li key={n} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2">
             <span className="truncate">{String(i.descripcion)}</span>
             <span className="shrink-0 text-xs text-muted-foreground">{String(i.estado)} · {fecha(String(i.apertura))}</span>
           </li>
         ))}
       </ul>
-    </section>
+    </SeccionFicha>
   );
 }
 
 export function FichaClientes({ clientes }: { clientes: FichaPropiedad["clientes_interesados"] }) {
   if (clientes.length === 0) return null;
   return (
-    <section className="space-y-2" aria-label="Clientes interesados">
-      <Titulo icono={UserRoundIcon}>Clientes a los que encaja ({clientes.length})</Titulo>
+    <SeccionFicha icono={UserRoundIcon} titulo="Clientes a los que encaja" extra={clientes.length}>
       <ul className="space-y-1">
         {clientes.map((c) => (
           <li key={c.cliente_id} className="rounded-md border px-3 py-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{c.cliente}</span>
-              <Badge variant="secondary" className="tabular-nums">{c.puntuacion} / 100</Badge>
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate font-medium">{c.cliente}</span>
+              <Badge variant="secondary" className="shrink-0 tabular-nums">{c.puntuacion} / 100</Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               {c.telefono} · hasta {eur(c.presupuesto_max)} · {c.motivos.join(" · ")}
@@ -71,6 +60,6 @@ export function FichaClientes({ clientes }: { clientes: FichaPropiedad["clientes
           </li>
         ))}
       </ul>
-    </section>
+    </SeccionFicha>
   );
 }

@@ -9,8 +9,8 @@ import { FichaSheet } from "@/components/propiedades/ficha-sheet";
 import { Input } from "@/components/ui/input";
 import { useClientes } from "@/hooks/use-clientes";
 
-export function ClientesPanel() {
-  const { lista, coincidencias, busqueda, setBusqueda, seleccionado, setSeleccionado } = useClientes();
+export function ClientesPanel({ clienteInicial }: { clienteInicial?: number | null }) {
+  const { lista, coincidencias, busqueda, setBusqueda, seleccionado, setSeleccionado } = useClientes(clienteInicial ?? null);
   const [abierta, setAbierta] = React.useState<string | null>(null);
   const clientes = lista.datos?.clientes ?? [];
   const cliente = clientes.find((c) => c.id === seleccionado) ?? null;

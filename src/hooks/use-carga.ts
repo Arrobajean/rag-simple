@@ -16,9 +16,11 @@ export interface EstadoCarga<T> {
  */
 export function useCarga<T>(cargar: () => Promise<T>, deps: React.DependencyList): EstadoCarga<T> {
   const [datos, setDatos] = React.useState<T | null>(null);
-  const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [version, setVersion] = React.useState(0);
+  const clave = JSON.stringify([deps, version]);
+  // Clave de la última carga ya resuelta: mientras no coincida seguimos cargando.
+  const [resuelto, setResuelto] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelado = false;
@@ -29,17 +31,16 @@ export function useCarga<T>(cargar: () => Promise<T>, deps: React.DependencyList
         setError(null);
       })
       .catch((err) => !cancelado && setError(errorMessage(err, "No se pudieron cargar los datos")))
-      .finally(() => !cancelado && setLoading(false));
+      .finally(() => {
+        if (!cancelado) setResuelto(clave);
+      });
     return () => {
       cancelado = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, version]);
+  }, [clave]);
 
-  const recargar = React.useCallback(() => {
-    setLoading(true);
-    setVersion((v) => v + 1);
-  }, []);
+  const recargar = React.useCallback(() => setVersion((v) => v + 1), []);
 
-  return { datos, loading, error, recargar };
+  return { datos, loading: resuelto !== clave, error, recargar };
 }
