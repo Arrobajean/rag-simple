@@ -39,6 +39,14 @@ export function tituloDeConversacion(items: ResumenConversacion[], id: string, n
   return items.find((c) => c.id === id)?.titulo ?? ninguno;
 }
 
+/** Textos del diálogo que confirma el borrado de una conversación (sidebar, barra del chat e historial). */
+export const TEXTOS_BORRAR_CONVERSACION = {
+  titulo: "¿Borrar esta conversación?",
+  descripcion: "Se elimina de este navegador y no se puede recuperar.",
+  textoConfirmar: "Borrar",
+  destructivo: true,
+};
+
 /** Descripción corta del momento del último cambio. */
 export function etiquetaHace(ms: number, ahora: number = Date.now()): string {
   const min = Math.floor((ahora - ms) / 60000);

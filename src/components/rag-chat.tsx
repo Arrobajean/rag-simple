@@ -8,12 +8,14 @@ import { ChatCabecera } from "@/components/chat/chat-cabecera";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatBienvenida } from "@/components/chat/chat-bienvenida";
 import { ChatMessage } from "@/components/chat/chat-message";
-import { FichaProvider } from "@/components/chat/ficha-context";
+import { FichaProvider } from "@/components/chat/ficha-provider";
 import { HistorialSheet } from "@/components/chat/historial-sheet";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useAutoscroll } from "@/hooks/use-autoscroll";
+import { useConfirmacion } from "@/hooks/use-confirmacion";
 import { useChatAcciones, useChatEstado, useChatHistorial } from "@/components/chat-provider";
 import { NOMBRE_ASISTENTE } from "@/lib/asistente";
-import { tituloDeConversacion } from "@/lib/chat-historial";
+import { TEXTOS_BORRAR_CONVERSACION, tituloDeConversacion } from "@/lib/chat-historial";
 import { conversacionAMarkdown } from "@/lib/chat-export";
 import { pideTabla } from "@/lib/chat/formato";
 
@@ -25,6 +27,8 @@ export function RagChat() {
   const [historialAbierto, setHistorialAbierto] = React.useState(false);
   const vacio = messages.length === 0;
   const titulo = vacio ? NOMBRE_ASISTENTE : tituloDeConversacion(conversaciones, conversacionId, "Conversación");
+  const confirmacion = useConfirmacion();
+  const pedirBorrar = (id: string) => confirmacion.pedir({ ...TEXTOS_BORRAR_CONVERSACION, onConfirmar: () => borrar(id) });
 
   const copiar = () => {
     void navigator.clipboard.writeText(conversacionAMarkdown(messages));
@@ -49,6 +53,7 @@ export function RagChat() {
         onNueva={nueva}
         onCopiar={copiar}
         onDescargar={descargar}
+        onBorrar={() => pedirBorrar(conversacionId)}
       />
 
       {/* Único scroll de la pantalla: los mensajes. El campo de texto queda fijo abajo. */}
@@ -112,8 +117,9 @@ export function RagChat() {
           setHistorialAbierto(false);
         }}
         onRenombrar={renombrar}
-        onBorrar={borrar}
+        onBorrar={pedirBorrar}
       />
+      <ConfirmDialog {...confirmacion.dialogo} />
     </div>
     </FichaProvider>
   );

@@ -42,6 +42,9 @@ export function FichaCaracteristicas({ ficha }: { ficha: FichaPropiedad }) {
         <DatoFicha etiqueta="Construcción" valor={e.anio_construccion ? String(e.anio_construccion) : "—"} />
         <DatoFicha etiqueta="Amueblado" valor={si(u.amueblado)} />
         <DatoFicha etiqueta="Terraza" valor={si(u.terraza)} />
+        <DatoFicha etiqueta="Garaje" valor={si(e.garaje)} />
+        <DatoFicha etiqueta="Portero" valor={si(e.portero)} />
+        <DatoFicha etiqueta="Piscina" valor={si(e.piscina)} />
         <DatoFicha
           etiqueta="Energía"
           valor={

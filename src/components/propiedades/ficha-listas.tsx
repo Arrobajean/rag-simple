@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { FileKindIcon } from "@/components/documents/file-kind";
 import { SeccionFicha } from "@/components/propiedades/ficha-seccion";
+import { useAbrirFicha } from "@/components/chat/ficha-context";
 import { eur, fecha } from "@/lib/format";
 import { tipoDocumento } from "@/lib/etiquetas";
 import type { FichaPropiedad } from "@/lib/types";
@@ -8,23 +12,41 @@ import type { FichaPropiedad } from "@/lib/types";
 const VACIO = "text-sm text-muted-foreground";
 
 export function FichaDocumentos({ documentos }: { documentos: FichaPropiedad["documentos"] }) {
+  const abrir = useAbrirFicha();
+
   return (
     <SeccionFicha id="documentos" titulo="Documentos" extra={documentos.length || undefined}>
       {documentos.length === 0 ? (
         <p className={VACIO}>Sin documentos vinculados.</p>
       ) : (
         <ul className="divide-y">
-          {documentos.map((d) => (
-            <li key={d.id}>
-              <Link href={`/dashboard/documentos/${d.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm transition-colors hover:text-primary">
-                <span className="truncate">{d.titulo}</span>
-                <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-                  {tipoDocumento(d.tipo)}
-                  {!d.vigente && <Badge variant="destructive">Sustituido</Badge>}
+          {documentos.map((d) => {
+            const contenido = (
+              <>
+                <FileKindIcon source={d.titulo} className="mt-0.5" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{d.titulo}</span>
+                  <span className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    {tipoDocumento(d.tipo)}
+                    {!d.vigente && <Badge variant="destructive" className="h-4 text-[10px]">Sustituido</Badge>}
+                  </span>
                 </span>
-              </Link>
-            </li>
-          ))}
+              </>
+            );
+            return (
+              <li key={d.id}>
+                {abrir ? (
+                  <button type="button" onClick={() => abrir.documento(d.id)} className="flex w-full items-start gap-3 py-2.5 text-left text-sm transition-colors hover:text-primary">
+                    {contenido}
+                  </button>
+                ) : (
+                  <Link href={`/dashboard/documentos/${d.id}`} className="flex items-start gap-3 py-2.5 text-sm transition-colors hover:text-primary">
+                    {contenido}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </SeccionFicha>

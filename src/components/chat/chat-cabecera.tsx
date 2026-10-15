@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { CheckIcon, CopyIcon, DownloadIcon, HistoryIcon, MoreHorizontalIcon, SquarePenIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, DownloadIcon, HistoryIcon, MoreHorizontalIcon, SquarePenIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Props {
   titulo: string;
@@ -12,10 +12,11 @@ interface Props {
   onNueva: () => void;
   onCopiar: () => void;
   onDescargar: () => void;
+  onBorrar: () => void;
 }
 
 /** Barra sobre el chat: título a la izquierda; Historial y Nueva conversación siempre a la vista a la derecha. */
-export function ChatCabecera({ titulo, hayConversacion, onHistorial, onNueva, onCopiar, onDescargar }: Props) {
+export function ChatCabecera({ titulo, hayConversacion, onHistorial, onNueva, onCopiar, onDescargar, onBorrar }: Props) {
   const [copiado, setCopiado] = React.useState(false);
 
   const copiar = () => {
@@ -45,6 +46,10 @@ export function ChatCabecera({ titulo, hayConversacion, onHistorial, onNueva, on
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onDescargar}>
                 <DownloadIcon /> Descargar como Markdown
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onBorrar}>
+                <Trash2Icon /> Borrar conversación
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

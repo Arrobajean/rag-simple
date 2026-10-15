@@ -1,5 +1,5 @@
 import { eur, num, pct } from "@/lib/format";
-import type { IngresosRiesgo, PuntoCobro, Resumen } from "@/lib/types";
+import type { AgendaHoy, IngresosRiesgo, PuntoCobro, Resumen } from "@/lib/types";
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -70,5 +70,40 @@ export function indicadoresPanel(r: Resumen, riesgo: IngresosRiesgo | null): Ind
       detalle: riesgo ? `${eur(riesgo.vacios.renta_mensual)}/mes sin ingresar` : null,
       aviso: false,
     },
+  ];
+}
+
+export interface TramoRiesgo {
+  etiqueta: string;
+  renta: number;
+  contratos: number;
+  /** Peso del tramo frente al mayor, entre 0 y 1: mide la barra de cada columna. */
+  proporcion: number;
+}
+
+/** Renta en riesgo por tramo de vencimiento, con el peso de cada uno frente al mayor. */
+export function tramosRiesgo(riesgo: IngresosRiesgo): TramoRiesgo[] {
+  const r = riesgo.renta_en_riesgo;
+  const tramos = [
+    { etiqueta: "En 30 días", renta: r.d30.renta, contratos: r.d30.contratos },
+    { etiqueta: "En 60 días", renta: r.d60.renta, contratos: r.d60.contratos },
+    { etiqueta: "En 90 días", renta: r.d90.renta, contratos: r.d90.contratos },
+  ];
+  const mayor = Math.max(1, ...tramos.map((t) => t.renta));
+  return tramos.map((t) => ({ ...t, proporcion: t.renta / mayor }));
+}
+
+export interface NivelAgenda {
+  nivel: 1 | 2 | 3;
+  etiqueta: string;
+  total: number;
+}
+
+/** Cuántas tareas hay en cada nivel de prioridad (totales reales, no solo las visibles). */
+export function nivelesAgenda(agenda: AgendaHoy): NivelAgenda[] {
+  return [
+    { nivel: 1, etiqueta: "Hoy", total: agenda.por_nivel.hoy },
+    { nivel: 2, etiqueta: "Esta semana", total: agenda.por_nivel.semana },
+    { nivel: 3, etiqueta: "Cuando se pueda", total: agenda.por_nivel.luego },
   ];
 }

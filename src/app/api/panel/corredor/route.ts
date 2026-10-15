@@ -14,8 +14,8 @@ export async function GET(req: Request) {
     const esAdmin = (await sesionDe(req))?.rol === "admin";
     const bloque = <T>(nombre: string, args: Record<string, unknown> = {}) => db.rpc<T>(nombre, args).catch(() => null);
     const [agenda, oportunidades, riesgo, embudo, documentos, salud] = await Promise.all([
-      bloque<PanelCorredor["agenda"]>("rpc_agenda_hoy", { p_limite: 8 }),
-      bloque<PanelCorredor["oportunidades"]>("rpc_oportunidades", { p_limite: 5 }),
+      bloque<PanelCorredor["agenda"]>("rpc_agenda_hoy", { p_limite: 20 }),
+      bloque<PanelCorredor["oportunidades"]>("rpc_oportunidades", { p_limite: 12 }),
       bloque<PanelCorredor["riesgo"]>("rpc_ingresos_riesgo", { p_limite: 3 }),
       bloque<PanelCorredor["embudo"]>("rpc_embudo", { p_dias: 30 }),
       bloque<PanelCorredor["documentos"]>("rpc_panel_documentos"),

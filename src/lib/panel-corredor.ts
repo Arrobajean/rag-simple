@@ -18,3 +18,11 @@ export function plazoAgenda(i: ItemAgenda): string {
       return diasRelativos(i.dias);
   }
 }
+
+/** Preguntas rápidas sobre el día: al pulsarlas se envían tal cual al asistente. */
+export const CONSULTAS_HOY = [
+  { etiqueta: "¿Qué hago hoy?", pregunta: "¿Qué tengo que hacer hoy? Ordena las tareas por urgencia y dime qué resolver primero." },
+  { etiqueta: "Impagos a reclamar", pregunta: "¿Qué impagos debo reclamar hoy? Ordénalos por importe y dime a quién escribir primero." },
+  { etiqueta: "Renovar esta semana", pregunta: "¿Qué contratos vencen esta semana y cuáles conviene renovar primero por la renta que representan?" },
+  { etiqueta: "Resumen de hoy", pregunta: "Resume en tres frases cómo va la cartera hoy: ocupación, cobros y lo que más riesgo tiene." },
+];

@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { FichaCabecera } from "@/components/propiedades/ficha-cabecera";
@@ -12,15 +13,15 @@ import { FichaUbicacion } from "@/components/propiedades/ficha-ubicacion";
 import { FichaClientes, FichaDocumentos, FichaIncidencias } from "@/components/propiedades/ficha-listas";
 import { CargandoFicha, ErrorCarga } from "@/components/panel/estado-carga";
 import { useFichaPropiedad } from "@/hooks/use-propiedades";
-import { useSeccionActiva } from "@/hooks/use-seccion-activa";
-import { SECCIONES_FICHA, contarSecciones } from "@/lib/ficha";
+import { contarSecciones, type SeccionId } from "@/lib/ficha";
 
-const IDS_SECCIONES = SECCIONES_FICHA.map((s) => s.id);
-
-/** Ficha lateral de un piso: cabecera, índice de anclas y todas las secciones con scroll. Se monta solo con una referencia abierta. */
+/** Ficha lateral de un piso: cabecera, índice de pestañas y la sección activa en el contenedor derecho. */
 export function FichaSheet({ referencia, onClose, enPanel = false }: { referencia: string | null; onClose: () => void; enPanel?: boolean }) {
   const { datos: ficha, loading, error, recargar } = useFichaPropiedad(referencia);
-  const { activa, irA } = useSeccionActiva(IDS_SECCIONES, ficha);
+  // La sección elegida se guarda junto a la referencia: al abrir otra ficha, vuelve a «Resumen» sin necesidad de efectos.
+  const [sel, setSel] = React.useState<{ ref: string | null; seccion: SeccionId }>({ ref: null, seccion: "resumen" });
+  const activa: SeccionId = sel.ref === referencia ? sel.seccion : "resumen";
+  const irA = React.useCallback((id: string) => setSel({ ref: referencia, seccion: id as SeccionId }), [referencia]);
 
   return (
     <Sheet open={referencia !== null} onOpenChange={(open) => !open && onClose()}>
@@ -30,28 +31,32 @@ export function FichaSheet({ referencia, onClose, enPanel = false }: { referenci
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           <FichaIndice activa={activa} cuentas={ficha ? contarSecciones(ficha) : {}} onIr={irA} />
 
-          <ScrollArea className="min-h-0 min-w-0 flex-1">
-            <div className="space-y-8 p-5">
-              {loading && !ficha ? (
+          {loading && !ficha ? (
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <div className="p-5">
                 <CargandoFicha />
-              ) : error || !ficha ? (
-                <ErrorCarga mensaje={error ?? "No se encontró la propiedad"} onReintentar={recargar} />
-              ) : (
-                <>
-                  <FichaResumen ficha={ficha} />
-                  <div className="grid gap-8 sm:grid-cols-2">
-                    <FichaContrato ficha={ficha} />
-                    <FichaPersonas ficha={ficha} />
-                  </div>
-                  <FichaCaracteristicas ficha={ficha} />
-                  <FichaUbicacion ficha={ficha} />
-                  <FichaDocumentos documentos={ficha.documentos} />
-                  <FichaIncidencias incidencias={ficha.incidencias} />
-                  <FichaClientes clientes={ficha.clientes_interesados} />
-                </>
-              )}
+              </div>
             </div>
-          </ScrollArea>
+          ) : error || !ficha ? (
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <div className="p-5">
+                <ErrorCarga mensaje={error ?? "No se encontró la propiedad"} onReintentar={recargar} />
+              </div>
+            </div>
+          ) : (
+            <ScrollArea key={activa} className="min-h-0 min-w-0 flex-1">
+              <div className="p-5">
+                {activa === "resumen" && <FichaResumen ficha={ficha} />}
+                {activa === "contrato" && <FichaContrato ficha={ficha} />}
+                {activa === "personas" && <FichaPersonas ficha={ficha} />}
+                {activa === "caracteristicas" && <FichaCaracteristicas ficha={ficha} />}
+                {activa === "ubicacion" && <FichaUbicacion ficha={ficha} />}
+                {activa === "documentos" && <FichaDocumentos documentos={ficha.documentos} />}
+                {activa === "incidencias" && <FichaIncidencias incidencias={ficha.incidencias} />}
+                {activa === "clientes" && <FichaClientes clientes={ficha.clientes_interesados} />}
+              </div>
+            </ScrollArea>
+          )}
         </div>
       </SheetContent>
     </Sheet>
