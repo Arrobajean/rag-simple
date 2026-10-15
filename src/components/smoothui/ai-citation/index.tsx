@@ -31,6 +31,11 @@ export type AICitationProps = {
   title: string;
   /** Omit for sources without a link (e.g. local files): the pill is then a focusable span. */
   url?: string;
+  /**
+   * When given, the pill is a button that runs this instead of navigating. Used to open the source
+   * in a side panel and stay in the current view.
+   */
+  onSelect?: () => void;
 };
 
 const hostOf = (url: string): string => {
@@ -55,6 +60,7 @@ const AICitation = ({
   description,
   favicon,
   label,
+  onSelect,
   subtitle,
   title,
   url,
@@ -113,7 +119,16 @@ const AICitation = ({
       onMouseEnter={open}
       onMouseLeave={scheduleClose}
     >
-      {url ? (
+      {onSelect ? (
+        <button
+          aria-describedby={isOpen ? cardId : undefined}
+          className={pillClass}
+          onClick={onSelect}
+          type="button"
+        >
+          {label}
+        </button>
+      ) : url ? (
         <a
           aria-describedby={isOpen ? cardId : undefined}
           className={pillClass}
@@ -161,7 +176,7 @@ const AICitation = ({
               <span className="truncate text-muted-foreground text-xs">
                 {subtitle ?? (url ? hostOf(url) : "")}
               </span>
-              {url ? (
+              {url || onSelect ? (
                 <ArrowUpRight
                   aria-hidden="true"
                   className="ml-auto text-muted-foreground"

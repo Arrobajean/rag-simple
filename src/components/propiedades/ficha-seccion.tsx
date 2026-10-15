@@ -1,25 +1,24 @@
 import { cn } from "@/lib/utils";
 
-/** Cabecera e envoltorio comunes a todas las secciones de la ficha. */
+/** Título y envoltorio comunes a las secciones de la ficha. `id` es el ancla a la que apunta el índice. */
 export function SeccionFicha({
-  icono: Icono,
+  id,
   titulo,
   extra,
   children,
   className,
 }: {
-  icono?: React.ComponentType<{ className?: string }>;
+  id: string;
   titulo: string;
   extra?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
-    <section aria-label={titulo} className={cn("space-y-2.5", className)}>
-      <div className="flex items-center gap-2">
-        {Icono ? <Icono className="size-3.5 text-muted-foreground" /> : null}
-        <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{titulo}</h3>
-        {extra ? <span className="ml-auto text-xs text-muted-foreground">{extra}</span> : null}
+    <section id={id} aria-label={titulo} className={cn("scroll-mt-5 space-y-3", className)}>
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">{titulo}</h3>
+        {extra ? <span className="text-xs text-muted-foreground tabular-nums">{extra}</span> : null}
       </div>
       {children}
     </section>

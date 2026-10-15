@@ -33,7 +33,7 @@ export function HistorialSheet({ abierto, onAbierto, conversaciones, activa, onN
           <SheetTitle className="flex items-center gap-2">
             <HistoryIcon className="size-4" /> Historial
           </SheetTitle>
-          <SheetDescription>Conversaciones guardadas en este navegador.</SheetDescription>
+          <SheetDescription>Se guardan solo en este navegador: si borras sus datos, se pierden.</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-3 border-b p-3">

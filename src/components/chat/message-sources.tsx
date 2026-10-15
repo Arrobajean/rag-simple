@@ -6,11 +6,13 @@ import { BookOpenIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { etiquetaFuente, extracto } from "@/lib/citations";
+import { useAbrirFicha } from "@/components/chat/ficha-context";
 import type { FuenteDocumento } from "@/lib/chat/types";
 
 /** Desplegable con los fragmentos de documentos que respaldan la respuesta. */
 export function MessageSources({ fuentes }: { fuentes: FuenteDocumento[] }) {
   const [open, setOpen] = React.useState(false);
+  const abrir = useAbrirFicha();
   const Chevron = open ? ChevronUpIcon : ChevronDownIcon;
 
   return (
@@ -26,13 +28,24 @@ export function MessageSources({ fuentes }: { fuentes: FuenteDocumento[] }) {
           {fuentes.map((f) => (
             <div key={f.id} className="space-y-1 rounded-md border bg-background p-2.5">
               <div className="flex items-center justify-between gap-2">
-                <Link
-                  href={`/dashboard/documentos/${f.documento_id}${f.pagina ? `?pagina=${f.pagina}` : ""}`}
-                  className="truncate font-medium hover:underline"
-                >
-                  <span className="mr-1.5 font-mono text-[10px] text-primary">[{f.id}]</span>
-                  {etiquetaFuente(f)}
-                </Link>
+                {abrir ? (
+                  <button
+                    type="button"
+                    onClick={() => abrir.documento(f.documento_id, f.pagina)}
+                    className="truncate text-left font-medium hover:underline"
+                  >
+                    <span className="mr-1.5 font-mono text-[10px] text-primary">[{f.id}]</span>
+                    {etiquetaFuente(f)}
+                  </button>
+                ) : (
+                  <Link
+                    href={`/dashboard/documentos/${f.documento_id}${f.pagina ? `?pagina=${f.pagina}` : ""}`}
+                    className="truncate font-medium hover:underline"
+                  >
+                    <span className="mr-1.5 font-mono text-[10px] text-primary">[{f.id}]</span>
+                    {etiquetaFuente(f)}
+                  </Link>
+                )}
                 <div className="flex shrink-0 gap-1">
                   {!f.vigente && <Badge variant="destructive" className="h-4 text-[10px]">Sustituido</Badge>}
                   {f.similitud !== null && <Badge variant="secondary" className="h-4 text-[10px]">{(f.similitud * 100).toFixed(0)} %</Badge>}

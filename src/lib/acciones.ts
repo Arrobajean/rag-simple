@@ -72,12 +72,29 @@ export interface ResultadoAccion {
 /** El error de Postgres viene como «rpc_accion: mensaje»: se deja solo el mensaje. */
 export const mensajeDeAccion = (err: unknown) => (err instanceof Error ? err.message : String(err)).replace(/^rpc_accion:\s*/, "");
 
+/** Estados a los que el asistente puede devolver una unidad; sirven para deshacer un cambio de estado. */
+const ESTADOS_REVERSIBLES = new Set(["disponible", "reservada", "reforma"]);
+
+/** Cómo revertir una acción ya hecha, cuando existe un reverso seguro. Hoy solo el cambio de estado de una unidad. */
+async function reversoDe(data: DataAccess, input: AccionInput): Promise<PropuestaAccion["deshacer"]> {
+  if (input.tipo !== "cambiar_estado_unidad" || !input.unidad_ref) return null;
+  try {
+    const ficha = await data.rpc<{ unidad?: { estado?: string } } | null>("rpc_ficha_unidad", { p_ref: input.unidad_ref });
+    const estado = ficha?.unidad?.estado;
+    if (!estado || !ESTADOS_REVERSIBLES.has(estado)) return null;
+    return { tipo: "cambiar_estado_unidad", datos: { unidad_ref: input.unidad_ref, estado } };
+  } catch {
+    return null; // sin reverso disponible, la acción sigue siendo válida
+  }
+}
+
 /** Valida y describe la acción SIN ejecutarla. Devuelve la propuesta o el motivo por el que no es válida. */
 export async function proponerAccion(data: DataAccess, input: AccionInput): Promise<{ ok: true; propuesta: PropuestaAccion } | { ok: false; error: string }> {
   const datos = datosDeAccion(input);
   try {
     const r = await data.rpc<ResultadoAccion>("rpc_accion", { p_tipo: input.tipo, p_datos: datos, p_ejecutar: false, p_usuario: null });
-    return { ok: true, propuesta: { id: crypto.randomUUID(), tipo: input.tipo, datos, resumen: r.resumen } };
+    const deshacer = await reversoDe(data, input);
+    return { ok: true, propuesta: { id: crypto.randomUUID(), tipo: input.tipo, datos, resumen: r.resumen, deshacer } };
   } catch (err) {
     return { ok: false, error: mensajeDeAccion(err) };
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { getCoincidenciasCliente, listarClientes } from "@/lib/api";
+import { getCliente, getCoincidenciasCliente, listarClientes } from "@/lib/api";
 import { useCarga } from "@/hooks/use-carga";
 
 export function useClientes(inicial: number | null = null) {
@@ -19,4 +19,9 @@ export function useClientes(inicial: number | null = null) {
   const coincidencias = useCarga(() => (seleccionado ? getCoincidenciasCliente(seleccionado) : Promise.resolve(null)), [seleccionado]);
 
   return { lista, coincidencias, busqueda, setBusqueda, seleccionado, setSeleccionado };
+}
+
+/** Ficha completa de un cliente (se carga al abrirla). */
+export function useFichaCliente(id: number | null) {
+  return useCarga(() => (id ? getCliente(id) : Promise.resolve(null)), [id]);
 }

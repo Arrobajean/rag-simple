@@ -10,7 +10,7 @@ import { tipoDocumento } from "@/lib/etiquetas";
 import { fecha } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export function DocumentoDetalle({ id, paginaInicial }: { id: number; paginaInicial: number }) {
+export function DocumentoDetalle({ id, paginaInicial, enPanel = false }: { id: number; paginaInicial: number; enPanel?: boolean }) {
   const { datos, loading, error, recargar, pagina, setPagina, total, setTotal } = useDocumentoDetalle(id, paginaInicial);
 
   if (loading && !datos) return <CargandoBloques n={3} />;
@@ -22,9 +22,11 @@ export function DocumentoDetalle({ id, paginaInicial }: { id: number; paginaInic
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Link href="/dashboard/documentos" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-          <ArrowLeftIcon className="size-3" /> Documentos
-        </Link>
+        {!enPanel && (
+          <Link href="/dashboard/documentos" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <ArrowLeftIcon className="size-3" /> Documentos
+          </Link>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight">{d.titulo}</h1>
           <Badge variant="outline">{tipoDocumento(d.tipo)}</Badge>
@@ -35,7 +37,7 @@ export function DocumentoDetalle({ id, paginaInicial }: { id: number; paginaInic
         </p>
       </div>
 
-      <div className={cn("grid gap-4", esPdf && "lg:grid-cols-2")}>
+      <div className={cn("grid gap-4", esPdf && !enPanel && "lg:grid-cols-2")}>
         {esPdf && (
           <div className="h-[75dvh] min-h-96">
             <VisorPdf url={archivo_url!} pagina={pagina} onPagina={setPagina} onTotal={setTotal} total={total} />

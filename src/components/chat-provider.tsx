@@ -31,9 +31,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     () => ({
       send: chat.send, stop: chat.stop, nueva: chat.nueva, abrir: chat.abrir, renombrar: chat.renombrar,
       borrar: chat.borrar, borrarTodas: chat.borrarTodas, reintentar: chat.reintentar,
-      confirmarAccion: chat.confirmarAccion, cancelarAccion: chat.cancelarAccion, valorar: chat.valorar,
+      confirmarAccion: chat.confirmarAccion, cancelarAccion: chat.cancelarAccion, deshacerAccion: chat.deshacerAccion, valorar: chat.valorar,
     }),
-    [chat.send, chat.stop, chat.nueva, chat.abrir, chat.renombrar, chat.borrar, chat.borrarTodas, chat.reintentar, chat.confirmarAccion, chat.cancelarAccion, chat.valorar]
+    [chat.send, chat.stop, chat.nueva, chat.abrir, chat.renombrar, chat.borrar, chat.borrarTodas, chat.reintentar, chat.confirmarAccion, chat.cancelarAccion, chat.deshacerAccion, chat.valorar]
   );
 
   return (

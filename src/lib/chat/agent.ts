@@ -1,4 +1,3 @@
-import { pideTabla } from "./formato";
 import type { Content, Part } from "@google/genai";
 import { chatModel, conModelos, getGeminiClient } from "@/lib/rag";
 import type { DataAccess } from "./data";
@@ -64,8 +63,6 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
   const conAdjuntos = aprobados.length > 0 || ventana.some((m) => !!m.adjuntoNombres?.length);
   const marca = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
-  // Las tablas y gráficos bajo el mensaje solo se pintan si el usuario los pide
-  const conTablas = pideTabla(ultimo?.role === "user" ? ultimo.content : undefined);
   const client = getGeminiClient();
   const fuentes: FuenteDocumento[] = [];
   const acciones: PropuestaAccion[] = [];
@@ -142,7 +139,7 @@ export async function ejecutarAgente({ mensajes, data, onEvent, signal, embed, h
       llamadas.map(async (l) => {
         onEvent({ type: "tool_start", id: l.id, nombre: l.name, descripcion: describirLlamada(l.name, l.args) });
         const r = await ejecutarHerramienta(l.name, l.args, ctx);
-        onEvent({ type: "tool_end", id: l.id, ok: r.ok, resumen: r.resumen, presentacion: conTablas ? r.presentacion : undefined });
+        onEvent({ type: "tool_end", id: l.id, ok: r.ok, resumen: r.resumen, presentacion: r.presentacion });
         return { llamada: l, resultado: r };
       })
     );

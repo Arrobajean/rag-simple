@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircleIcon, BellRingIcon, CheckCircle2Icon, HomeIcon, Loader2Icon, UserPlusIcon, WrenchIcon, XCircleIcon } from "lucide-react";
+import { AlertCircleIcon, BellRingIcon, CheckCircle2Icon, HomeIcon, Loader2Icon, Undo2Icon, UserPlusIcon, WrenchIcon, XCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AccionUI, TipoAccion } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
@@ -16,15 +16,16 @@ interface Props {
   accion: AccionUI;
   onConfirmar: () => void;
   onCancelar: () => void;
+  onDeshacer: () => void;
 }
 
 /**
  * Propuesta del asistente que modifica datos. No se ejecuta hasta pulsar «Confirmar»;
  * el texto mostrado es el que genera la propia base de datos al validarla.
  */
-export function AccionCard({ accion: a, onConfirmar, onCancelar }: Props) {
+export function AccionCard({ accion: a, onConfirmar, onCancelar, onDeshacer }: Props) {
   const { titulo, icono: Icono } = TIPOS[a.tipo];
-  const cerrada = a.estado === "hecha" || a.estado === "cancelada";
+  const cerrada = a.estado === "hecha" || a.estado === "cancelada" || a.estado === "deshecha";
 
   return (
     <section
@@ -50,6 +51,11 @@ export function AccionCard({ accion: a, onConfirmar, onCancelar }: Props) {
               <CheckCircle2Icon className="size-3.5" /> Hecho
             </p>
           )}
+          {a.estado === "deshecha" && (
+            <p className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+              <Undo2Icon className="size-3.5" /> Deshecho: se ha vuelto al estado anterior
+            </p>
+          )}
           {a.estado === "cancelada" && (
             <p className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
               <XCircleIcon className="size-3.5" /> Cancelada: no se ha modificado nada
@@ -71,6 +77,14 @@ export function AccionCard({ accion: a, onConfirmar, onCancelar }: Props) {
           <Button size="sm" onClick={onConfirmar} disabled={a.estado === "ejecutando"}>
             {a.estado === "ejecutando" && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
             {a.estado === "error" ? "Reintentar" : "Confirmar"}
+          </Button>
+        </div>
+      )}
+
+      {a.estado === "hecha" && a.deshacer && (
+        <div className="mt-2 flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onDeshacer}>
+            <Undo2Icon className="mr-1.5 size-3.5" /> Deshacer
           </Button>
         </div>
       )}

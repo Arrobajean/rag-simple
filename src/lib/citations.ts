@@ -32,6 +32,8 @@ export function enlazarReferencias(texto: string): string {
     texto
       // A veces el modelo escribe la referencia como destino del propio enlace: [U-00285](U-00285). Se corrige a la ruta real.
       .replace(/\[([^\]]*)\]\((U-\d{3,6})\)/g, (_m, textoEnlace: string, ref: string) => `[${textoEnlace}](/dashboard/propiedades?ref=${ref})`)
+      // Y a veces la envuelve en corchetes sin enlace: [U-00285]. Se quitan para que se enlace más abajo.
+      .replace(/\[(U-\d{3,6})\](?!\()/g, "$1")
       .replace(/(`[^`]*`|\[[^\]]*\]\([^)]*\))/g, (m) => `${ABRE}${guardado.push(m) - 1}${CIERRA}`)
       .replace(REF_UNIDAD, (ref) => `[${ref}](/dashboard/propiedades?ref=${ref})`)
       .replace(new RegExp(`${ABRE}(\\d+)${CIERRA}`, "g"), (_m, i: string) => guardado[Number(i)])

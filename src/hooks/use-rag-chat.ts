@@ -256,6 +256,22 @@ export function useRagChat() {
     [cambiarAccion]
   );
 
+  /** Revierte una acción ya ejecutada que tenga reverso (p. ej. volver al estado anterior de una unidad). */
+  const deshacerAccion = React.useCallback(
+    async (mensajeId: string, accion: AccionUI) => {
+      if (!accion.deshacer) return;
+      cambiarAccion(mensajeId, accion.id, { estado: "ejecutando", error: undefined });
+      try {
+        const r = await ejecutarAccionApi(accion.deshacer.tipo, accion.deshacer.datos);
+        cambiarAccion(mensajeId, accion.id, { estado: "deshecha", resultado: r.resumen });
+        toast.success("Deshecho", { description: r.resumen });
+      } catch (err) {
+        cambiarAccion(mensajeId, accion.id, { estado: "error", error: errorMessage(err, "No se pudo deshacer") });
+      }
+    },
+    [cambiarAccion]
+  );
+
   const cancelarAccion = React.useCallback((mensajeId: string, accion: AccionUI) => cambiarAccion(mensajeId, accion.id, { estado: "cancelada" }), [cambiarAccion]);
 
   /** Guarda la valoración de una respuesta para que el administrador la vea. */
@@ -280,6 +296,6 @@ export function useRagChat() {
   return {
     messages, loading, contexto, conversaciones, conversacionId,
     send, stop, nueva, abrir, renombrar, borrar, borrarTodas,
-    reintentar, confirmarAccion, cancelarAccion, valorar,
+    reintentar, confirmarAccion, cancelarAccion, deshacerAccion, valorar,
   };
 }

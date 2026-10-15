@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { ChevronDownIcon, TableIcon } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { MessageSources } from "@/components/chat/message-sources";
 import { CitedMarkdown } from "@/components/chat/cited-markdown";
@@ -23,15 +24,19 @@ interface ChatMessageProps {
   onValorar: (mensajeId: string, vote: "up" | "down", comentario?: string) => Promise<boolean>;
   onConfirmarAccion: (mensajeId: string, a: AccionUI) => void;
   onCancelarAccion: (mensajeId: string, a: AccionUI) => void;
+  onDeshacerAccion: (mensajeId: string, a: AccionUI) => void;
+  /** El usuario pidió una tabla: se muestra desplegada en lugar de plegada. */
+  tablasVisibles: boolean;
 }
 
 /**
  * Mensaje al estilo de los chats actuales: el usuario en una píldora a la derecha; el asistente sin burbuja,
  * a todo el ancho de la columna, con sus consultas, resultados, fuentes y acciones debajo.
  */
-export const ChatMessage = React.memo(function ChatMessage({ message, puedeReintentar, onReintentar, onValorar, onConfirmarAccion, onCancelarAccion }: ChatMessageProps) {
+export const ChatMessage = React.memo(function ChatMessage({ message, puedeReintentar, onReintentar, onValorar, onConfirmarAccion, onCancelarAccion, onDeshacerAccion, tablasVisibles }: ChatMessageProps) {
   const reducir = useReducedMotion();
   const id = message.id;
+  const [verTablas, setVerTablas] = React.useState(tablasVisibles);
   const onRetry = React.useCallback(() => onReintentar(id), [onReintentar, id]);
   const onVote = React.useCallback((v: "up" | "down", comentario?: string) => onValorar(id, v, comentario), [onValorar, id]);
   const esUsuario = message.role === "user";
@@ -56,14 +61,31 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
       {message.content && <CitedMarkdown text={message.content} fuentes={message.fuentes} />}
       {resultados.length > 0 && (
         <div className="space-y-2">
-          {resultados.map((p) => (
-            <ToolResult key={p.id} presentacion={p.presentacion!} />
-          ))}
+          <button
+            type="button"
+            onClick={() => setVerTablas((v) => !v)}
+            aria-expanded={verTablas}
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <TableIcon className="size-3.5" />
+            {verTablas ? "Ocultar tabla" : resultados.length === 1 ? "Ver tabla" : `Ver ${resultados.length} tablas`}
+            <ChevronDownIcon className={verTablas ? "size-3.5 rotate-180 transition-transform" : "size-3.5 transition-transform"} />
+          </button>
+          {verTablas &&
+            resultados.map((p) => (
+              <ToolResult key={p.id} presentacion={p.presentacion!} />
+            ))}
         </div>
       )}
       {message.fuentes && message.fuentes.length > 0 && <MessageSources fuentes={message.fuentes} />}
       {(message.acciones ?? []).map((a) => (
-        <AccionCard key={a.id} accion={a} onConfirmar={() => onConfirmarAccion(id, a)} onCancelar={() => onCancelarAccion(id, a)} />
+        <AccionCard
+          key={a.id}
+          accion={a}
+          onConfirmar={() => onConfirmarAccion(id, a)}
+          onCancelar={() => onCancelarAccion(id, a)}
+          onDeshacer={() => onDeshacerAccion(id, a)}
+        />
       ))}
       {!message.enCurso && message.content && (
         <MensajeAcciones texto={message.content} onReintentar={puedeReintentar ? onRetry : undefined} onVoto={message.error ? undefined : onVote} />

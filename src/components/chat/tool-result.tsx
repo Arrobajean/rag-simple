@@ -1,5 +1,9 @@
 import { celda } from "@/lib/format";
+import { useAbrirFicha } from "@/components/chat/ficha-context";
 import type { Presentacion } from "@/lib/chat/types";
+
+/** Referencia de unidad en una celda ("U-00285"). */
+const REF_UNIDAD = /^U-\d{3,6}$/;
 
 function Barras({ p }: { p: Extract<Presentacion, { tipo: "barras" }> }) {
   const max = Math.max(1, ...p.datos.map((d) => d.valor));
@@ -19,6 +23,7 @@ function Barras({ p }: { p: Extract<Presentacion, { tipo: "barras" }> }) {
 }
 
 function Tabla({ p }: { p: Extract<Presentacion, { tipo: "tabla" }> }) {
+  const abrir = useAbrirFicha();
   if (p.filas.length === 0) return <p className="text-xs text-muted-foreground">Sin resultados.</p>;
   return (
     <div className="-ml-6 overflow-x-auto">
@@ -33,11 +38,21 @@ function Tabla({ p }: { p: Extract<Presentacion, { tipo: "tabla" }> }) {
         <tbody>
           {p.filas.map((f, i) => (
             <tr key={i}>
-              {p.columnas.map((c) => (
-                <td key={c.clave} className={`border-b border-foreground/15 py-3 align-top first:font-semibold ${c.formato === "moneda" || c.formato === "numero" ? "tabular-nums text-right" : ""}`}>
-                  {celda(f[c.clave], c.formato)}
-                </td>
-              ))}
+              {p.columnas.map((c) => {
+                const raw = f[c.clave];
+                const ref = typeof raw === "string" && REF_UNIDAD.test(raw) ? raw : null;
+                return (
+                  <td key={c.clave} className={`border-b border-foreground/15 py-3 align-top first:font-semibold ${c.formato === "moneda" || c.formato === "numero" ? "tabular-nums text-right" : ""}`}>
+                    {ref && abrir ? (
+                      <button type="button" onClick={() => abrir.propiedad(ref)} className="cursor-pointer text-left font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary">
+                        {ref}
+                      </button>
+                    ) : (
+                      celda(raw, c.formato)
+                    )}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

@@ -82,6 +82,10 @@ caso("un enlace con la referencia como destino se corrige a la ruta real", () =>
   assert.equal(enlazarReferencias("Ver [U-00723](U-00723)."), "Ver [U-00723](/dashboard/propiedades?ref=U-00723).");
 });
 
+caso("una referencia entre corchetes se enlaza sin corchetes", () => {
+  assert.equal(enlazarReferencias("El [U-00884] es el más barato."), "El [U-00884](/dashboard/propiedades?ref=U-00884) es el más barato.");
+});
+
 caso("las citas y las referencias conviven en el mismo texto", () => {
   assert.equal(
     enlazarReferencias(enlazarCitas("Según [F1] el piso U-00001.", fuentes)),

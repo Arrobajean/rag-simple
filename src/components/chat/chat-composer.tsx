@@ -115,10 +115,6 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
             <TooltipContent>Más opciones</TooltipContent>
           </Tooltip>
           <DropdownMenuContent side="top" align="start" className="w-60">
-            <DropdownMenuItem disabled={adjuntos.length >= MAX_ADJUNTOS} onClick={() => selector.current?.click()}>
-              <PaperclipIcon /> Adjuntar imagen o PDF
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onNueva}>
               <SquarePenIcon /> Nueva conversación
             </DropdownMenuItem>
@@ -134,6 +130,23 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
             </DropdownMenuItem>
           </DropdownMenuContent>
       </DropdownMenu>
+
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <button
+              type="button"
+              aria-label="Adjuntar imagen o PDF"
+              disabled={adjuntos.length >= MAX_ADJUNTOS}
+              onClick={() => selector.current?.click()}
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent"
+            />
+          }
+        >
+          <PaperclipIcon className="size-[18px]" />
+        </TooltipTrigger>
+        <TooltipContent>Adjuntar imagen o PDF</TooltipContent>
+      </Tooltip>
 
       <textarea
         ref={area}
@@ -159,6 +172,24 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
       />
 
       <div className="flex items-center gap-2">
+          {hayConversacion && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <motion.button
+                    type="button"
+                    onClick={onNueva}
+                    aria-label="Nueva conversación"
+                    whileTap={reducir ? undefined : { scale: 0.9 }}
+                    className="flex size-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                }
+              >
+                <SquarePenIcon className="size-[18px]" />
+              </TooltipTrigger>
+              <TooltipContent>Nueva conversación</TooltipContent>
+            </Tooltip>
+          )}
           {contexto && contexto.llamadas > 0 && <ContextMeter contexto={contexto} />}
 
           <AnimatePresence mode="wait" initial={false}>

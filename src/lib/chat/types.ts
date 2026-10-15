@@ -73,10 +73,12 @@ export interface PropuestaAccion {
   datos: Record<string, unknown>;
   /** Descripción en español de lo que se hará, generada por la base de datos. */
   resumen: string;
+  /** Cómo revertir la acción una vez hecha, si es posible (p. ej. volver al estado anterior). */
+  deshacer?: { tipo: TipoAccion; datos: Record<string, unknown> } | null;
 }
 
 export interface AccionUI extends PropuestaAccion {
-  estado: "pendiente" | "ejecutando" | "hecha" | "cancelada" | "error";
+  estado: "pendiente" | "ejecutando" | "hecha" | "deshecha" | "cancelada" | "error";
   resultado?: string;
   error?: string;
 }

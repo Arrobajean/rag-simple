@@ -93,6 +93,7 @@ export const listarAlertas = (f: { tipo?: string; severidad?: string }) => reque
 export const actualizarAlerta = (clave: string, accion: "resolver" | "posponer", dias?: number) => sendJson<{ success: boolean }>("/api/alertas", { clave, accion, dias });
 export const listarClientes = (q?: string) => request<{ clientes: Cliente[] }>(`/api/clientes${query({ q })}`);
 export const getCoincidenciasCliente = (id: number) => request<{ coincidencias: Coincidencia[] }>(`/api/clientes/${id}`);
+export const getCliente = (id: number) => request<{ cliente: Cliente | null; coincidencias: Coincidencia[] }>(`/api/clientes/${id}`);
 
 // ── Documentos ──────────────────────────────────────────────────────────────────────────────────
 export const listarDocumentos = (f: { tipo?: string; q?: string } = {}) =>
