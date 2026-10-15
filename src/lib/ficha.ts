@@ -5,7 +5,6 @@ export const SECCIONES_FICHA = [
   { id: "resumen", etiqueta: "Resumen" },
   { id: "contrato", etiqueta: "Contrato" },
   { id: "personas", etiqueta: "Personas" },
-  { id: "caracteristicas", etiqueta: "Características" },
   { id: "ubicacion", etiqueta: "Ubicación" },
   { id: "documentos", etiqueta: "Documentos" },
   { id: "incidencias", etiqueta: "Incidencias" },

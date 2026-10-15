@@ -12,6 +12,7 @@ import { FichaResumen } from "@/components/propiedades/ficha-resumen";
 import { FichaUbicacion } from "@/components/propiedades/ficha-ubicacion";
 import { FichaClientes, FichaDocumentos, FichaIncidencias } from "@/components/propiedades/ficha-listas";
 import { CargandoFicha, ErrorCarga } from "@/components/panel/estado-carga";
+import { LimiteError } from "@/components/error-boundary";
 import { useFichaPropiedad } from "@/hooks/use-propiedades";
 import { contarSecciones, type SeccionId } from "@/lib/ficha";
 
@@ -46,14 +47,20 @@ export function FichaSheet({ referencia, onClose, enPanel = false }: { referenci
           ) : (
             <ScrollArea key={activa} className="min-h-0 min-w-0 flex-1">
               <div className="p-5">
-                {activa === "resumen" && <FichaResumen ficha={ficha} />}
-                {activa === "contrato" && <FichaContrato ficha={ficha} />}
-                {activa === "personas" && <FichaPersonas ficha={ficha} />}
-                {activa === "caracteristicas" && <FichaCaracteristicas ficha={ficha} />}
-                {activa === "ubicacion" && <FichaUbicacion ficha={ficha} />}
-                {activa === "documentos" && <FichaDocumentos documentos={ficha.documentos} />}
-                {activa === "incidencias" && <FichaIncidencias incidencias={ficha.incidencias} />}
-                {activa === "clientes" && <FichaClientes clientes={ficha.clientes_interesados} />}
+                <LimiteError>
+                  {activa === "resumen" && (
+                    <div className="space-y-8">
+                      <FichaResumen ficha={ficha} />
+                      <FichaCaracteristicas ficha={ficha} />
+                    </div>
+                  )}
+                  {activa === "contrato" && <FichaContrato ficha={ficha} />}
+                  {activa === "personas" && <FichaPersonas ficha={ficha} />}
+                  {activa === "ubicacion" && <FichaUbicacion ficha={ficha} />}
+                  {activa === "documentos" && <FichaDocumentos documentos={ficha.documentos} />}
+                  {activa === "incidencias" && <FichaIncidencias incidencias={ficha.incidencias} />}
+                  {activa === "clientes" && <FichaClientes clientes={ficha.clientes_interesados} />}
+                </LimiteError>
               </div>
             </ScrollArea>
           )}
