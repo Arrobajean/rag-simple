@@ -1,6 +1,7 @@
 import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ChatProvider } from "@/components/chat-provider";
+import { ConfiguracionProvider } from "@/components/configuracion-provider";
 import { DashboardContenido } from "@/components/dashboard-contenido";
 import { SesionProvider } from "@/components/sesion-provider";
 import { SiteHeader } from "@/components/site-header";
@@ -10,6 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <SesionProvider>
     <ChatProvider>
+    <ConfiguracionProvider>
     <SidebarProvider
       className="h-svh overflow-hidden"
       style={
@@ -25,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <DashboardContenido>{children}</DashboardContenido>
       </SidebarInset>
     </SidebarProvider>
+    </ConfiguracionProvider>
     </ChatProvider>
     </SesionProvider>
   );

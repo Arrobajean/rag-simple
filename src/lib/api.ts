@@ -3,7 +3,7 @@ import type {
   Alerta, Cliente, Coincidencia, DatosSubida, Documento, EstadoLector, ExtraccionListada, FichaEdificio, FichaPropiedad,
   FiltrosPropiedades, FragmentoDocumento, HealthReport, ListaAlertas, ListaPropiedades, Resolucion, ResultadoBusqueda, Resumen,
   PanelCorredor, SolicitudCampo, CampoCatalogo, Valores, Hallazgo, Valoracion, ResumenValoraciones, RegistroAccion, RegistroBloqueo,
-  RegistroAcceso, ResumenAccesos,
+  RegistroAcceso, ResumenAccesos, ListaSoporte, TipoSoporte,
 } from "@/lib/types";
 
 // Cliente HTTP del frontend: única capa que conoce las rutas de /api.
@@ -35,7 +35,7 @@ const query = (params: Record<string, string | number | boolean | undefined | nu
 // ── Sesión ──────────────────────────────────────────────────────────────────────────────────────
 export const login = (password: string) => sendJson<{ rol: string }>("/api/auth/login", { password });
 export const logout = () => sendJson<{ ok: boolean }>("/api/auth/logout", {});
-export const getSesion = () => request<{ rol: "gestor" | "admin" | "visitante" | null; abierto: boolean; nombre: string | null; conFoto: boolean }>("/api/auth/me");
+export const getSesion = () => request<{ rol: "gestor" | "admin" | "visitante" | null; abierto: boolean; nombre: string | null; email: string | null; conFoto: boolean }>("/api/auth/me");
 
 // ── Chat (streaming NDJSON) ─────────────────────────────────────────────────────────────────────
 export async function streamChat(messages: MensajeEntrada[], onEvent: (e: ChatEvent) => void, signal?: AbortSignal) {
@@ -75,6 +75,11 @@ export const listarValoraciones = (f: { voto?: string; pagina?: number } = {}) =
 // ── Registro de accesos (solo administradores) ──────────────────────────────────────────────────
 export const listarAccesos = (f: { metodo?: string; pagina?: number } = {}) =>
   request<{ resumen: ResumenAccesos; items: RegistroAcceso[]; total: number }>(`/api/accesos${query(f)}`);
+
+// ── Soporte y feedback ──────────────────────────────────────────────────────────────────────────
+export const enviarSoporte = (d: { tipo: TipoSoporte; mensaje: string; email?: string }) => sendJson<{ id: number }>("/api/soporte", d);
+export const listarSoporte = (f: { tipo?: string; pagina?: number } = {}) => request<ListaSoporte>(`/api/soporte${query(f)}`);
+export const marcarSoporte = (id: number, estado: "nuevo" | "revisado") => sendJson<{ success: boolean }>("/api/soporte", { id, estado }, "PATCH");
 
 // ── Panel, propiedades, edificios ───────────────────────────────────────────────────────────────
 export const getResumen = () => request<Resumen>("/api/resumen");

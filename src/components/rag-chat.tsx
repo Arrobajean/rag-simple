@@ -1,19 +1,23 @@
 "use client";
 
+import * as React from "react";
 import { ArrowDownIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatBienvenida } from "@/components/chat/chat-bienvenida";
 import { ChatMessage } from "@/components/chat/chat-message";
+import { HistorialSheet } from "@/components/chat/historial-sheet";
 import { useAutoscroll } from "@/hooks/use-autoscroll";
-import { useChatAcciones, useChatEstado } from "@/components/chat-provider";
+import { useChatAcciones, useChatEstado, useChatHistorial } from "@/components/chat-provider";
 import { conversacionAMarkdown } from "@/lib/chat-export";
 
 export function RagChat() {
   const { messages, loading, contexto } = useChatEstado();
-  const { send, stop, clear, reintentar, confirmarAccion, cancelarAccion, valorar } = useChatAcciones();
+  const { conversaciones, conversacionId } = useChatHistorial();
+  const { send, stop, nueva, abrir, renombrar, borrar, reintentar, confirmarAccion, cancelarAccion, valorar } = useChatAcciones();
   const { ref, alScroll, mostrarBajar, bajar } = useAutoscroll<HTMLDivElement>(messages);
+  const [historialAbierto, setHistorialAbierto] = React.useState(false);
   const vacio = messages.length === 0;
 
   const copiar = () => {
@@ -70,10 +74,24 @@ export function RagChat() {
       <div className={vacio ? "flex flex-1 flex-col justify-center px-3 pb-10 sm:px-4 sm:pb-16" : "shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"}>
         <motion.div layout="position" transition={{ type: "spring", bounce: 0, duration: 0.5 }} className="mx-auto w-full max-w-3xl">
           <AnimatePresence initial={false}>{vacio && <ChatBienvenida key="bienvenida" />}</AnimatePresence>
-          <ChatComposer loading={loading} hayConversacion={!vacio} contexto={contexto} onSend={send} onStop={stop} onNueva={clear} onCopiar={copiar} onDescargar={descargar} />
+          <ChatComposer loading={loading} hayConversacion={!vacio} contexto={contexto} onSend={send} onStop={stop} onNueva={nueva} onHistorial={() => setHistorialAbierto(true)} onCopiar={copiar} onDescargar={descargar} />
           {!vacio && <p className="mt-2 text-center text-[11px] text-muted-foreground">El asistente puede cometer errores. Verifica los datos importantes antes de actuar.</p>}
         </motion.div>
       </div>
+
+      <HistorialSheet
+        abierto={historialAbierto}
+        onAbierto={setHistorialAbierto}
+        conversaciones={conversaciones}
+        activa={conversacionId}
+        onNueva={nueva}
+        onAbrir={(id) => {
+          abrir(id);
+          setHistorialAbierto(false);
+        }}
+        onRenombrar={renombrar}
+        onBorrar={borrar}
+      />
     </div>
   );
 }

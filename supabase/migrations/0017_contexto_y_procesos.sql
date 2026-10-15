@@ -33,8 +33,10 @@ begin
 end $$;
 
 -- 4. Búsqueda híbrida con umbral (0016) y con el edificio de cada resultado, para no mezclar normas de dos edificios.
--- Se recrea porque cambia el tipo de retorno.
-drop function if exists rpc_buscar_documentos;
+-- Se recrea porque cambia el tipo de retorno. Se eliminan las dos firmas conocidas con la lista de
+-- argumentos explícita: un `drop ... rpc_buscar_documentos` sin argumentos sería ambiguo (ERROR 42725).
+drop function if exists rpc_buscar_documentos(vector, text, bigint, bigint, text[], int, boolean);
+drop function if exists rpc_buscar_documentos(vector, text, bigint, bigint, text[], int, boolean, double precision);
 
 create or replace function rpc_buscar_documentos(
   query_embedding vector(768),

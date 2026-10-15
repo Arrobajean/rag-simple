@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, PaperclipIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, HistoryIcon, PaperclipIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,6 +21,7 @@ interface Props {
   onSend: (question: string, adjuntos?: AdjuntoCliente[]) => void;
   onStop: () => void;
   onNueva: () => void;
+  onHistorial: () => void;
   onCopiar: () => void;
   onDescargar: () => void;
 }
@@ -28,7 +29,7 @@ interface Props {
 const MAX_ALTO_PX = 200;
 
 /** Campo de texto del asistente al estilo de los chats actuales: crece con el texto, Enter envía, Mayús+Enter salta de línea. */
-export function ChatComposer({ loading, hayConversacion, contexto, onSend, onStop, onNueva, onCopiar, onDescargar }: Props) {
+export function ChatComposer({ loading, hayConversacion, contexto, onSend, onStop, onNueva, onHistorial, onCopiar, onDescargar }: Props) {
   const [texto, setTexto] = React.useState("");
   const [copiado, setCopiado] = React.useState(false);
   const [arrastrando, setArrastrando] = React.useState(false);
@@ -120,6 +121,9 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onNueva}>
               <SquarePenIcon /> Nueva conversación
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onHistorial}>
+              <HistoryIcon /> Historial
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled={!hayConversacion} onClick={copiar}>

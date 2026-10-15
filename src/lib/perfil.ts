@@ -9,10 +9,11 @@ export function iniciales(nombre: string): string {
 }
 
 export function etiquetaRol(rol: "gestor" | "admin" | "visitante" | null, abierto: boolean): string {
-  if (abierto) return "Administrador";
+  // El rol real (sesión de LinkedIn o contraseña) manda; "abierto" solo decide cuando no hay identidad.
   if (rol === "admin") return "Administrador";
   if (rol === "gestor") return "Gestor";
-  return rol === "visitante" ? "Visitante" : "Invitado";
+  if (rol === "visitante") return "Visitante";
+  return abierto ? "Administrador" : "Invitado";
 }
 
 export function leerNombre(): string {

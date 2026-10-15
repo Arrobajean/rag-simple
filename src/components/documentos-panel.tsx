@@ -12,6 +12,8 @@ import { ResultadosBusqueda } from "@/components/documentos/resultados-busqueda"
 import { SubidaDialog } from "@/components/documentos/subida-dialog";
 import { TablaDocumentos } from "@/components/documentos/tabla-documentos";
 import { CargandoBloques, ErrorCarga } from "@/components/panel/estado-carga";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useConfirmacion } from "@/hooks/use-confirmacion";
 import { useDocumentos } from "@/hooks/use-documentos";
 import { useSesion } from "@/hooks/use-sesion";
 import { OPCIONES_TIPO_DOC } from "@/lib/etiquetas";
@@ -21,11 +23,18 @@ export function DocumentosPanel() {
   const router = useRouter();
   const d = useDocumentos();
   const { esAdmin } = useSesion();
+  const confirmacion = useConfirmacion();
   const [subida, setSubida] = React.useState(false);
   const documentos = d.lista.datos?.documentos ?? [];
 
   const eliminar = (doc: Documento) => {
-    if (window.confirm(`¿Eliminar «${doc.titulo}»? Se borran también sus fragmentos y el archivo.`)) void d.eliminar(doc.id);
+    confirmacion.pedir({
+      titulo: "Eliminar documento",
+      descripcion: `Se eliminará «${doc.titulo}» junto con sus fragmentos y el archivo. Esta acción no se puede deshacer.`,
+      textoConfirmar: "Eliminar",
+      destructivo: true,
+      onConfirmar: () => d.eliminar(doc.id),
+    });
   };
 
   // Tras subir un contrato se ofrece leerlo enseguida
@@ -72,10 +81,12 @@ export function DocumentosPanel() {
 
       {d.lista.datos && (
         <p className="text-xs text-muted-foreground">
-          {d.lista.datos.total} documentos · {d.lista.datos.fragmentos} fragmentos indexados
+          ${d.lista.datos.total} documentos · ${d.lista.datos.fragmentos} fragmentos indexados
           <button type="button" className="ml-2 text-primary hover:underline" onClick={() => router.push("/dashboard/lector")}>Ir al lector</button>
         </p>
       )}
+
+      <ConfirmDialog {...confirmacion.dialogo} />
     </div>
   );
 }

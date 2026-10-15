@@ -5,10 +5,12 @@ import { LogOutIcon, MoonIcon, SunIcon, Trash2Icon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useChatAcciones, useChatCantidad } from "@/components/chat-provider";
+import { useChatAcciones, useChatHistorial } from "@/components/chat-provider";
+import { useConfirmacion } from "@/hooks/use-confirmacion";
 import { etiquetaRol } from "@/lib/perfil";
 import { cn } from "@/lib/utils";
 
@@ -35,8 +37,9 @@ function Seccion({ titulo, children }: { titulo: string; children: React.ReactNo
 
 export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, nombreFijo, rol, abierto, onSalir }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
-  const { clear } = useChatAcciones();
-  const total = useChatCantidad();
+  const { borrarTodas } = useChatAcciones();
+  const { conversaciones } = useChatHistorial();
+  const confirmacion = useConfirmacion();
   const [borrador, setBorrador] = React.useState(nombre);
   const oscuro = resolvedTheme !== "light";
 
@@ -100,17 +103,25 @@ export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, nomb
           <Seccion titulo="Asistente">
             <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
               <div className="text-sm">
-                <p className="font-medium">Conversación guardada</p>
-                <p className="text-xs text-muted-foreground">{total ? `${total} mensajes en este navegador` : "No hay ninguna"}</p>
+                <p className="font-medium">Historial de conversaciones</p>
+                <p className="text-xs text-muted-foreground">{conversaciones.length ? `${conversaciones.length} guardadas en este navegador` : "No hay ninguna"}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={total === 0}
-                onClick={() => {
-                  clear();
-                  toast.success("Conversación borrada");
-                }}
+                disabled={conversaciones.length === 0}
+                onClick={() =>
+                  confirmacion.pedir({
+                    titulo: "Borrar historial",
+                    descripcion: "Se eliminarán todas las conversaciones guardadas en este navegador. Esta acción no se puede deshacer.",
+                    textoConfirmar: "Borrar",
+                    destructivo: true,
+                    onConfirmar: () => {
+                      borrarTodas();
+                      toast.success("Historial borrado");
+                    },
+                  })
+                }
               >
                 <Trash2Icon className="mr-1.5 size-3.5" /> Borrar
               </Button>
@@ -123,6 +134,8 @@ export function ConfiguracionDialog({ open, onOpenChange, nombre, onNombre, nomb
             </Button>
           )}
         </div>
+
+        <ConfirmDialog {...confirmacion.dialogo} />
       </DialogContent>
     </Dialog>
   );

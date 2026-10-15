@@ -24,6 +24,17 @@ export interface ChatMessage {
   error?: boolean;
 }
 
+/** Resumen de una conversación del historial del asistente (guardado en el navegador). */
+export interface ResumenConversacion {
+  id: string;
+  titulo: string;
+  /** El título lo puso el usuario a mano: no se recalcula desde el primer mensaje. */
+  fijado: boolean;
+  /** Momento del último cambio (ms desde 1970). */
+  actualizada: number;
+  mensajes: number;
+}
+
 // ── Propiedades ─────────────────────────────────────────────────────────────────────────────────
 export interface PropiedadResumen {
   id: number;
@@ -320,6 +331,35 @@ export interface RegistroAcceso {
 export interface ResumenAccesos {
   total: number;
   ultimas24h: number;
+}
+
+// ── Soporte y feedback (vista de administración) ────────────────────────────────────────────────
+export type TipoSoporte = "soporte" | "feedback";
+
+export interface MensajeSoporte {
+  id: number;
+  tipo: TipoSoporte;
+  email: string | null;
+  nombre: string | null;
+  rol: "admin" | "gestor" | "visitante" | null;
+  mensaje: string;
+  estado: "nuevo" | "revisado";
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface ResumenSoporte {
+  total: number;
+  soporte: number;
+  feedback: number;
+  nuevos: number;
+  ultimas24h: number;
+}
+
+export interface ListaSoporte {
+  resumen: ResumenSoporte;
+  items: MensajeSoporte[];
+  total: number;
 }
 
 // ── Panel del corredor ──────────────────────────────────────────────────────────────────────────────

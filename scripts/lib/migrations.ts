@@ -32,5 +32,6 @@ export function shimForPglite(sql: string): string {
   return sql
     .replace(/create extension if not exists \w+( with schema public)?;/gi, "")
     .replace(/create index if not exists \w+\s+on \w+ using hnsw[^;]*;/gi, "")
-    .replace(/vector\(768\)/g, "float8[]");
+    // `vector(768)` en columnas/firmas y `vector` suelto (p. ej. en `drop function ... (vector, ...)`)
+    .replace(/\bvector\b(\(768\))?/g, "float8[]");
 }

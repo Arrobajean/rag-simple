@@ -11,10 +11,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (accesoAbierto()) redirect("/dashboard");
   const { error } = await searchParams;
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-muted/30 p-4">
       <Suspense>
         <LoginForm conPassword={passwordConfigurado()} conLinkedin={linkedinConfigurado()} errorInicial={error} />
       </Suspense>
+      <p className="max-w-sm text-center text-xs text-muted-foreground">Demo con datos sintéticos. Respuestas legales orientativas.</p>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BellIcon, Building2Icon, FileTextIcon, HistoryIcon, LayoutDashboardIcon, MessageSquareIcon, ScanTextIcon, SlidersHorizontalIcon, StarIcon, UsersIcon,
+  BellIcon, BookOpenIcon, Building2Icon, FileTextIcon, HistoryIcon, LayoutDashboardIcon, LifeBuoyIcon, MessageSquareIcon, ScanTextIcon, SendIcon, SettingsIcon, SlidersHorizontalIcon, StarIcon, UsersIcon,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -12,8 +12,25 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { SidebarUsuario } from "@/components/sidebar-usuario";
+import { SoporteDialog } from "@/components/soporte-dialog";
+import { useConfiguracion } from "@/hooks/use-configuracion";
+import { useSesion } from "@/hooks/use-sesion";
+import type { TipoSoporte } from "@/lib/types";
 
-const GRUPOS = [
+type Accion = "configuracion" | TipoSoporte;
+
+interface Item {
+  titulo: string;
+  icono: React.ComponentType<{ className?: string }>;
+  href?: string;
+  accion?: Accion;
+  exacto?: boolean;
+  badge?: string;
+  /** Páginas reservadas a administradores: se ocultan a quien no lo sea. */
+  soloAdmin?: boolean;
+}
+
+const GRUPOS: { etiqueta: string; items: Item[] }[] = [
   {
     etiqueta: "Gestión",
     items: [
@@ -35,15 +52,45 @@ const GRUPOS = [
     etiqueta: "Administración",
     items: [
       { titulo: "Campos del catálogo", href: "/dashboard/campos", icono: SlidersHorizontalIcon },
-      { titulo: "Valoraciones", href: "/dashboard/valoraciones", icono: StarIcon },
-      { titulo: "Accesos", href: "/dashboard/accesos", icono: HistoryIcon },
+      { titulo: "Valoraciones", href: "/dashboard/valoraciones", icono: StarIcon, soloAdmin: true },
+      { titulo: "Accesos", href: "/dashboard/accesos", icono: HistoryIcon, soloAdmin: true },
+      { titulo: "Soporte y feedback", href: "/dashboard/soporte", icono: LifeBuoyIcon, soloAdmin: true },
+    ],
+  },
+  {
+    etiqueta: "Recursos",
+    items: [
+      { titulo: "Documentación", href: "/dashboard/documentacion", icono: BookOpenIcon },
+      { titulo: "Configuración", accion: "configuracion", icono: SettingsIcon },
+      { titulo: "Soporte", accion: "soporte", icono: LifeBuoyIcon },
+      { titulo: "Feedback", accion: "feedback", icono: SendIcon },
     ],
   },
 ];
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { abrir: abrirConfiguracion } = useConfiguracion();
+  const { esAdmin, rol } = useSesion();
+  const [dialogo, setDialogo] = React.useState<TipoSoporte | null>(null);
+  // Cambia en cada apertura para remontar el diálogo y vaciar el formulario
+  const [apertura, setApertura] = React.useState(0);
   const activo = (href: string, exacto?: boolean) => (exacto ? pathname === href : pathname === href || pathname.startsWith(`${href}/`));
+
+  const ejecutar = React.useCallback(
+    (accion: Accion) => {
+      if (accion === "configuracion") {
+        abrirConfiguracion();
+      } else {
+        setApertura((n) => n + 1);
+        setDialogo(accion);
+      }
+    },
+    [abrirConfiguracion]
+  );
+
+  // Oculta las páginas de administración a quien no sea admin (mientras se desconoce el rol se muestran)
+  const grupos = GRUPOS.map((g) => ({ ...g, items: g.items.filter((it) => !it.soloAdmin || !rol || esAdmin) })).filter((g) => g.items.length > 0);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -60,14 +107,19 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-3">
-        {GRUPOS.map((g) => (
-          <SidebarGroup key={g.etiqueta}>
+        {grupos.map((g, i) => (
+          <SidebarGroup key={g.etiqueta} className={i === grupos.length - 1 ? "mt-auto" : undefined}>
             <SidebarGroupLabel className="text-[11px] uppercase tracking-wider text-muted-foreground">{g.etiqueta}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1">
                 {g.items.map((it) => (
-                  <SidebarMenuItem key={it.href}>
-                    <SidebarMenuButton isActive={activo(it.href, it.exacto)} render={<Link href={it.href} />} className="font-medium">
+                  <SidebarMenuItem key={it.titulo}>
+                    <SidebarMenuButton
+                      isActive={it.href ? activo(it.href, it.exacto) : false}
+                      onClick={it.accion ? () => ejecutar(it.accion!) : undefined}
+                      render={it.href ? <Link href={it.href} /> : undefined}
+                      className="font-medium"
+                    >
                       <it.icono className="size-4" />
                       <span>{it.titulo}</span>
                       {it.badge && (
@@ -88,6 +140,15 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarUsuario />
         <p className="px-1 text-[10px] leading-snug text-muted-foreground">Datos de demostración sintéticos. Respuestas legales orientativas.</p>
       </SidebarFooter>
+
+      <SoporteDialog
+        key={apertura}
+        tipo={dialogo ?? "soporte"}
+        abierto={dialogo !== null}
+        onCambiarAbierto={(v) => {
+          if (!v) setDialogo(null);
+        }}
+      />
     </Sidebar>
   );
 }

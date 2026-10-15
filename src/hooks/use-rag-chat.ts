@@ -5,11 +5,20 @@ import { toast } from "sonner";
 import { ejecutarAccionApi, enviarValoracion, errorMessage, streamChat } from "@/lib/api";
 import type { AccionUI, ChatEvent, EjecucionHerramienta } from "@/lib/chat/types";
 import { aplicarUso, CONTEXTO_INICIAL, iniciarTurno, type ContextoChat } from "@/lib/chat-contexto";
-import { guardarConversacion, leerConversacion } from "@/lib/chat-almacen";
+import {
+  borrarConversacion,
+  borrarConversaciones,
+  fijarActiva,
+  guardarConversacion,
+  leerActiva,
+  leerConversacion,
+  listarConversaciones,
+  renombrarConversacion,
+} from "@/lib/chat-almacen";
 import { liberarPrevisualizacion, type AdjuntoCliente } from "@/lib/adjuntos-cliente";
 import { preguntaPrevia } from "@/lib/chat-mensajes";
 import type { MensajeEntrada } from "@/lib/chat/types";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, ResumenConversacion } from "@/lib/types";
 
 /** Las acciones ya confirmadas se cuentan al modelo en el turno siguiente (no aparecen como texto en pantalla). */
 const notasDeAcciones = (m: ChatMessage) =>
@@ -21,6 +30,9 @@ const hora = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: 
 function nuevo(role: ChatMessage["role"], content: string, extra?: Partial<ChatMessage>): ChatMessage {
   return { id: crypto.randomUUID(), role, content, timestamp: hora(), ...extra };
 }
+
+const nuevoIdConversacion = () =>
+  globalThis.crypto?.randomUUID?.() ?? `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /** Aplica un evento del servidor al mensaje del asistente que se está construyendo. */
 function aplicar(m: ChatMessage, e: ChatEvent): ChatMessage {
@@ -52,31 +64,38 @@ function aplicar(m: ChatMessage, e: ChatEvent): ChatMessage {
 }
 
 /**
- * Estado de la conversación + acciones. Las acciones son ESTABLES (no cambian entre renders): leen el estado
- * actual por referencia, así los mensajes ya pintados no se vuelven a renderizar mientras llega otro por streaming.
+ * Conversación + historial guardado en el navegador. Las acciones son ESTABLES (no cambian entre renders): leen el
+ * estado actual por referencia, así los mensajes ya pintados no se vuelven a renderizar mientras llega otro por streaming.
  */
 export function useRagChat() {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [contexto, setContexto] = React.useState<ContextoChat>(CONTEXTO_INICIAL);
+  const [conversaciones, setConversaciones] = React.useState<ResumenConversacion[]>([]);
+  const [conversacionId, setConversacionId] = React.useState<string>(nuevoIdConversacion);
   const [restaurado, setRestaurado] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
-  const actual = React.useRef({ messages, loading });
+  const actual = React.useRef({ messages, loading, contexto, conversacionId });
 
   React.useEffect(() => {
-    actual.current = { messages, loading };
+    actual.current = { messages, loading, contexto, conversacionId };
   });
 
-  // Restaura la conversación guardada tras montar (no antes: el servidor no tiene acceso al almacenamiento del navegador)
+  // Restaura la conversación abierta tras montar (no antes: el servidor no tiene acceso al almacenamiento del navegador)
   React.useEffect(() => {
     let cancelado = false;
     Promise.resolve().then(() => {
       if (cancelado) return;
-      const guardada = leerConversacion();
+      const lista = listarConversaciones();
+      const activa = leerActiva();
+      const id = activa && lista.some((c) => c.id === activa) ? activa : (lista[0]?.id ?? null);
+      const guardada = id ? leerConversacion(id) : null;
       if (guardada) {
+        setConversacionId(guardada.id);
         setMessages(guardada.mensajes);
         setContexto(guardada.contexto);
       }
+      setConversaciones(lista);
       setRestaurado(true);
     });
     return () => {
@@ -86,10 +105,14 @@ export function useRagChat() {
 
   // Guarda al cambiar la conversación; durante el streaming se agrupa en un guardado cada 600 ms
   React.useEffect(() => {
-    if (!restaurado) return;
-    const t = setTimeout(() => guardarConversacion(messages, contexto), loading ? 600 : 0);
+    if (!restaurado || messages.length === 0) return;
+    const t = setTimeout(() => {
+      guardarConversacion(conversacionId, messages, contexto);
+      fijarActiva(conversacionId);
+      setConversaciones(listarConversaciones());
+    }, loading ? 600 : 0);
     return () => clearTimeout(t);
-  }, [messages, contexto, loading, restaurado]);
+  }, [messages, contexto, loading, restaurado, conversacionId]);
 
   const send = React.useCallback(async (question: string, adjuntos: AdjuntoCliente[] = []) => {
     const q = question.trim();
@@ -153,11 +176,65 @@ export function useRagChat() {
 
   const stop = React.useCallback(() => abortRef.current?.abort(), []);
 
-  const clear = React.useCallback(() => {
+  /** Guarda lo que haya en curso y empieza una conversación nueva (la anterior queda en el historial). */
+  const nueva = React.useCallback(() => {
+    const { messages: previos, contexto: ctx, conversacionId: idActual } = actual.current;
     abortRef.current?.abort();
+    if (previos.length > 0) guardarConversacion(idActual, previos, ctx);
+    previos.forEach((m) => m.adjuntos?.forEach(liberarPrevisualizacion));
+    setMessages([]);
+    setContexto(CONTEXTO_INICIAL);
+    setConversacionId(nuevoIdConversacion());
+    setConversaciones(listarConversaciones());
+  }, []);
+
+  /** Abre una conversación del historial. */
+  const abrir = React.useCallback((id: string) => {
+    const { messages: previos, contexto: ctx, conversacionId: idActual } = actual.current;
+    if (id === idActual) return;
+    const guardada = leerConversacion(id);
+    if (!guardada) {
+      toast.error("No se encontró esa conversación");
+      setConversaciones(listarConversaciones());
+      return;
+    }
+    abortRef.current?.abort();
+    if (previos.length > 0) guardarConversacion(idActual, previos, ctx);
+    previos.forEach((m) => m.adjuntos?.forEach(liberarPrevisualizacion));
+    setConversacionId(id);
+    setMessages(guardada.mensajes);
+    setContexto(guardada.contexto);
+    fijarActiva(id);
+    setConversaciones(listarConversaciones());
+  }, []);
+
+  const renombrar = React.useCallback((id: string, titulo: string) => {
+    renombrarConversacion(id, titulo);
+    setConversaciones(listarConversaciones());
+  }, []);
+
+  /** Borra una conversación del historial; si era la abierta, empieza una nueva vacía. */
+  const borrar = React.useCallback((id: string) => {
+    borrarConversacion(id);
+    if (id === actual.current.conversacionId) {
+      abortRef.current?.abort();
+      actual.current.messages.forEach((m) => m.adjuntos?.forEach(liberarPrevisualizacion));
+      setMessages([]);
+      setContexto(CONTEXTO_INICIAL);
+      setConversacionId(nuevoIdConversacion());
+    }
+    setConversaciones(listarConversaciones());
+  }, []);
+
+  /** Borra todo el historial guardado en este navegador. */
+  const borrarTodas = React.useCallback(() => {
+    abortRef.current?.abort();
+    borrarConversaciones();
     actual.current.messages.forEach((m) => m.adjuntos?.forEach(liberarPrevisualizacion));
     setMessages([]);
     setContexto(CONTEXTO_INICIAL);
+    setConversacionId(nuevoIdConversacion());
+    setConversaciones([]);
   }, []);
 
   const cambiarAccion = React.useCallback((mensajeId: string, accionId: string, cambios: Partial<AccionUI>) => {
@@ -200,5 +277,9 @@ export function useRagChat() {
     }
   }, []);
 
-  return { messages, loading, contexto, send, stop, clear, reintentar, confirmarAccion, cancelarAccion, valorar };
+  return {
+    messages, loading, contexto, conversaciones, conversacionId,
+    send, stop, nueva, abrir, renombrar, borrar, borrarTodas,
+    reintentar, confirmarAccion, cancelarAccion, valorar,
+  };
 }

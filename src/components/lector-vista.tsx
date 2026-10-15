@@ -12,11 +12,14 @@ import { FormularioLector } from "@/components/lector/formulario-lector";
 import { HallazgosLector } from "@/components/lector/hallazgos-lector";
 import { ResolucionLector } from "@/components/lector/resolucion-lector";
 import { CargandoBloques, ErrorCarga } from "@/components/panel/estado-carga";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useConfirmacion } from "@/hooks/use-confirmacion";
 import { useLector } from "@/hooks/use-lector";
 
 /** Pantalla dividida: el PDF a la izquierda; a la derecha los datos leídos, listos para verificar y corregir. */
 export function LectorVista({ id }: { id: number }) {
   const l = useLector(id);
+  const confirmacion = useConfirmacion();
   const [total, setTotal] = React.useState(0);
   const [pestana, setPestana] = React.useState("datos");
 
@@ -104,11 +107,21 @@ export function LectorVista({ id }: { id: number }) {
               motivoBloqueo={motivo}
               onGuardar={() => void l.guardar()}
               onConfirmar={() => void l.confirmar()}
-              onDescartar={() => window.confirm("¿Descartar este borrador? No se guardará nada en la base de datos.") && void l.descartar()}
+              onDescartar={() =>
+                confirmacion.pedir({
+                  titulo: "Descartar borrador",
+                  descripcion: "No se guardará nada en la base de datos. Esta acción no se puede deshacer.",
+                  textoConfirmar: "Descartar",
+                  destructivo: true,
+                  onConfirmar: () => l.descartar(),
+                })
+              }
             />
           )}
         </div>
       </div>
+
+      <ConfirmDialog {...confirmacion.dialogo} />
     </div>
   );
 }

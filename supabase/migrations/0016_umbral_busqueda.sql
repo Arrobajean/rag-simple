@@ -5,7 +5,11 @@
 -- Calibrado con `pnpm rag:eval` (src/lib/documents/busqueda.ts). Las funciones nuevas quedan sin ejecución
 -- pública por los valores por defecto de 0009 y 0011.
 
-drop function if exists rpc_buscar_documentos;
+-- Se recrea con la lista de argumentos explícita: si conviven varias firmas, un `drop ... rpc_buscar_documentos`
+-- sin argumentos sería ambiguo (ERROR 42725). Se eliminan las dos firmas conocidas para poder re-ejecutar el
+-- archivo completo aunque la 0017 ya estuviera aplicada (cambio de tipo de retorno).
+drop function if exists rpc_buscar_documentos(vector, text, bigint, bigint, text[], int, boolean);
+drop function if exists rpc_buscar_documentos(vector, text, bigint, bigint, text[], int, boolean, double precision);
 
 create or replace function rpc_buscar_documentos(
   query_embedding vector(768),
