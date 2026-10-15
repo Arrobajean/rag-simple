@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { FuenteDocumento } from "../src/lib/chat/types";
-import { enlazarCitas, enlazarReferencias } from "../src/lib/citations";
+import { enlazarCitas, enlazarReferencias, normalizarEnlaceFicha } from "../src/lib/citations";
 import { trocear } from "../src/lib/documents/chunk";
 import { extraerPaginas, MIME_DOCX } from "../src/lib/documents/extract";
 import { fileKind } from "../src/lib/file-kind";
@@ -91,6 +91,23 @@ caso("las citas y las referencias conviven en el mismo texto", () => {
     enlazarReferencias(enlazarCitas("Según [F1] el piso U-00001.", fuentes)),
     "Según [F1](cita:F1) el piso [U-00001](/dashboard/propiedades?ref=U-00001)."
   );
+});
+
+// ── Enlaces de ficha escritos por el modelo (ruta o parámetro inventados) ─────────────────────────
+caso("una ficha con la ruta y el parámetro inventados se canoniza", () => {
+  assert.equal(normalizarEnlaceFicha("/dashboard/unidades?referencia=U-00868"), "/dashboard/propiedades?ref=U-00868");
+});
+
+caso("una ficha ya canónica se mantiene", () => {
+  assert.equal(normalizarEnlaceFicha("/dashboard/propiedades?ref=U-00868"), "/dashboard/propiedades?ref=U-00868");
+});
+
+caso("la ruta sin referencia no se reescribe", () => {
+  assert.equal(normalizarEnlaceFicha("/dashboard/unidades?estado=disponible"), null);
+});
+
+caso("un enlace externo no se toca", () => {
+  assert.equal(normalizarEnlaceFicha("https://rag-simple.vercel.app/dashboard/unidades?referencia=U-00868"), null);
 });
 
 // ── Troceado ───────────────────────────────────────────────────────────────────────────────────

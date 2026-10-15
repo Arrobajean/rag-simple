@@ -6,7 +6,6 @@ import { motion, useReducedMotion } from "motion/react";
 import { MessageSources } from "@/components/chat/message-sources";
 import { CitedMarkdown } from "@/components/chat/cited-markdown";
 import { MensajeAcciones } from "@/components/chat/mensaje-acciones";
-import { ToolSteps } from "@/components/chat/tool-steps";
 import { ToolResult } from "@/components/chat/tool-result";
 import { ChatThinking } from "@/components/chat/chat-thinking";
 import { AccionCard } from "@/components/chat/accion-card";
@@ -56,8 +55,7 @@ export const ChatMessage = React.memo(function ChatMessage({ message, puedeReint
 
   return (
     <motion.div {...animacion} className="space-y-3">
-      {pasos.length > 0 && <ToolSteps pasos={pasos} enCurso={!!message.enCurso} />}
-      {fase && pasos.length === 0 && <ChatThinking />}
+      {fase && <ChatThinking etiqueta={fase.etiqueta} />}
       {message.content && <CitedMarkdown text={message.content} fuentes={message.fuentes} />}
       {resultados.length > 0 && (
         <div className="space-y-2">

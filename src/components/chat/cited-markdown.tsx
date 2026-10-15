@@ -6,7 +6,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AICitation } from "@/components/ui/ai-citation";
 import { FileKindIcon } from "@/components/documents/file-kind";
-import { enlazarCitas, enlazarReferencias, esCita, etiquetaFuente, extracto, idDeCita } from "@/lib/citations";
+import { enlazarCitas, enlazarReferencias, esCita, etiquetaFuente, extracto, idDeCita, normalizarEnlaceFicha } from "@/lib/citations";
 import { useAbrirFicha } from "@/components/chat/ficha-context";
 import type { FuenteDocumento } from "@/lib/chat/types";
 
@@ -58,7 +58,9 @@ export function CitedMarkdown({ text, fuentes = [] }: { text: string; fuentes?: 
           );
         }
         if (!href) return <>{children}</>;
-        const destino = /^U-\d{3,6}$/.test(href.trim()) ? `/dashboard/propiedades?ref=${href.trim()}` : href;
+        const limpio = href.trim();
+        const ficha = normalizarEnlaceFicha(limpio);
+        const destino = ficha ?? (/^U-\d{3,6}$/.test(limpio) ? `/dashboard/propiedades?ref=${limpio}` : href);
         // Dentro del asistente, las fichas se abren en un panel lateral sin salir de la conversación
         if (abrir) {
           const prop = destino.match(PROP_URL);

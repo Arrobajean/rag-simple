@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowUpIcon, CheckIcon, CopyIcon, DownloadIcon, HistoryIcon, PaperclipIcon, PlusIcon, SquarePenIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, PaperclipIcon, SquareIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AdjuntosChips } from "@/components/chat/adjuntos-chips";
 import { ContextMeter } from "@/components/chat/context-meter";
@@ -16,22 +15,16 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   loading: boolean;
-  hayConversacion: boolean;
   contexto?: ContextoChat;
   onSend: (question: string, adjuntos?: AdjuntoCliente[]) => void;
   onStop: () => void;
-  onNueva: () => void;
-  onHistorial: () => void;
-  onCopiar: () => void;
-  onDescargar: () => void;
 }
 
 const MAX_ALTO_PX = 200;
 
 /** Campo de texto del asistente al estilo de los chats actuales: crece con el texto, Enter envía, Mayús+Enter salta de línea. */
-export function ChatComposer({ loading, hayConversacion, contexto, onSend, onStop, onNueva, onHistorial, onCopiar, onDescargar }: Props) {
+export function ChatComposer({ loading, contexto, onSend, onStop }: Props) {
   const [texto, setTexto] = React.useState("");
-  const [copiado, setCopiado] = React.useState(false);
   const [arrastrando, setArrastrando] = React.useState(false);
   const area = React.useRef<HTMLTextAreaElement>(null);
   const selector = React.useRef<HTMLInputElement>(null);
@@ -55,12 +48,6 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
   };
 
   const hayArchivos = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
-
-  const copiar = () => {
-    onCopiar();
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 1600);
-  };
 
   return (
     <div
@@ -100,37 +87,6 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
         }}
       />
       <div className="flex items-end gap-1.5">
-      <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <DropdownMenuTrigger
-                  aria-label="Más opciones"
-                  className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-foreground/10 data-[popup-open]:text-foreground"
-                />
-              }
-            >
-              <PlusIcon className="size-5 transition-transform duration-200 group-has-[[data-popup-open]]/composer:rotate-45" />
-            </TooltipTrigger>
-            <TooltipContent>Más opciones</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent side="top" align="start" className="w-60">
-            <DropdownMenuItem onClick={onNueva}>
-              <SquarePenIcon /> Nueva conversación
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onHistorial}>
-              <HistoryIcon /> Historial
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={!hayConversacion} onClick={copiar}>
-              {copiado ? <CheckIcon /> : <CopyIcon />} Copiar conversación
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled={!hayConversacion} onClick={onDescargar}>
-              <DownloadIcon /> Descargar como Markdown
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-      </DropdownMenu>
-
       <Tooltip>
         <TooltipTrigger
           render={
@@ -172,24 +128,6 @@ export function ChatComposer({ loading, hayConversacion, contexto, onSend, onSto
       />
 
       <div className="flex items-center gap-2">
-          {hayConversacion && (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <motion.button
-                    type="button"
-                    onClick={onNueva}
-                    aria-label="Nueva conversación"
-                    whileTap={reducir ? undefined : { scale: 0.9 }}
-                    className="flex size-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                }
-              >
-                <SquarePenIcon className="size-[18px]" />
-              </TooltipTrigger>
-              <TooltipContent>Nueva conversación</TooltipContent>
-            </Tooltip>
-          )}
           {contexto && contexto.llamadas > 0 && <ContextMeter contexto={contexto} />}
 
           <AnimatePresence mode="wait" initial={false}>

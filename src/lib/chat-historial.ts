@@ -34,6 +34,11 @@ export function filtrarConversaciones(items: ResumenConversacion[], consulta: st
   return items.filter((c) => c.titulo.toLowerCase().includes(q));
 }
 
+/** Título de la conversación abierta; `ninguno` mientras no esté guardada. */
+export function tituloDeConversacion(items: ResumenConversacion[], id: string, ninguno: string): string {
+  return items.find((c) => c.id === id)?.titulo ?? ninguno;
+}
+
 /** Descripción corta del momento del último cambio. */
 export function etiquetaHace(ms: number, ahora: number = Date.now()): string {
   const min = Math.floor((ahora - ms) / 60000);

@@ -11,6 +11,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { SidebarConversaciones } from "@/components/sidebar-conversaciones";
 import { SidebarUsuario } from "@/components/sidebar-usuario";
 import { SoporteDialog } from "@/components/soporte-dialog";
 import { useConfiguracion } from "@/hooks/use-configuracion";
@@ -28,6 +29,8 @@ interface Item {
   badge?: string;
   /** Páginas reservadas a administradores: se ocultan a quien no lo sea. */
   soloAdmin?: boolean;
+  /** Muestra bajo el enlace las conversaciones recientes del asistente. */
+  conversaciones?: boolean;
 }
 
 const GRUPOS: { etiqueta: string; items: Item[] }[] = [
@@ -35,7 +38,7 @@ const GRUPOS: { etiqueta: string; items: Item[] }[] = [
     etiqueta: "Gestión",
     items: [
       { titulo: "Panel", href: "/dashboard", icono: LayoutDashboardIcon, exacto: true },
-      { titulo: "Asistente", href: "/dashboard/chat", icono: MessageSquareIcon, badge: "IA" },
+      { titulo: "Asistente", href: "/dashboard/chat", icono: MessageSquareIcon, badge: "IA", conversaciones: true },
       { titulo: "Propiedades", href: "/dashboard/propiedades", icono: Building2Icon },
       { titulo: "Alertas", href: "/dashboard/alertas", icono: BellIcon },
       { titulo: "Clientes", href: "/dashboard/clientes", icono: UsersIcon },
@@ -128,6 +131,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                         </Badge>
                       )}
                     </SidebarMenuButton>
+                    {it.conversaciones && <SidebarConversaciones />}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

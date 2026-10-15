@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { ArrowRightIcon, CheckCircle2Icon } from "lucide-react";
-import { BotonAtlas } from "@/components/panel/boton-atlas";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { eur, num } from "@/lib/format";
-import { plazoAgenda, preguntaAgenda } from "@/lib/panel-corredor";
+import { plazoAgenda } from "@/lib/panel-corredor";
 import type { AgendaHoy, ItemAgenda } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+/** Tareas visibles a la vez; el resto se ve en Alertas. */
+const TAREAS_VISIBLES = 4;
 
 const COLOR_NIVEL: Record<ItemAgenda["nivel"], string> = {
   1: "bg-destructive",
@@ -14,40 +18,64 @@ const COLOR_NIVEL: Record<ItemAgenda["nivel"], string> = {
 };
 const ETIQUETA_NIVEL: Record<ItemAgenda["nivel"], string> = { 1: "Hoy", 2: "Esta semana", 3: "Cuando se pueda" };
 
-/** Cola de tareas por prioridad: lo primero que un corredor necesita ver por la mañana. */
-export function HoyCard({ agenda }: { agenda: AgendaHoy }) {
-  const { hoy, semana } = agenda.por_nivel;
+function descripcion(agenda: AgendaHoy | null, error: string | null): string {
+  if (error) return "No se pudo cargar";
+  if (!agenda) return "Cargando…";
+  if (agenda.total === 0) return "Todo al día";
+  return `${num(agenda.por_nivel.hoy)} para hoy · ${num(agenda.por_nivel.semana)} esta semana · ${eur(agenda.importe_en_juego)} en juego`;
+}
+
+function Tarea({ tarea }: { tarea: ItemAgenda }) {
   return (
-    <Card className="shadow-xs">
+    <li className="flex h-12 items-center gap-3 rounded-lg border px-3">
+      <span className={cn("size-2 shrink-0 rounded-full", COLOR_NIVEL[tarea.nivel])} role="img" aria-label={ETIQUETA_NIVEL[tarea.nivel]} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{tarea.titulo}</p>
+        <p className="truncate text-xs text-muted-foreground">{[plazoAgenda(tarea), tarea.ubicacion].filter(Boolean).join(" · ")}</p>
+      </div>
+      {tarea.importe ? <p className="shrink-0 text-sm font-medium tabular-nums">{eur(tarea.importe)}</p> : null}
+    </li>
+  );
+}
+
+interface HoyCardProps {
+  agenda: AgendaHoy | null;
+  cargando: boolean;
+  error: string | null;
+  onReintentar: () => void;
+}
+
+/** Lo primero que hay que hacer hoy, por prioridad. Cada estado (cargando, error, vacío) ocupa el mismo sitio. */
+export function HoyCard({ agenda, cargando, error, onReintentar }: HoyCardProps) {
+  return (
+    <Card size="sm" className="min-h-0 shadow-xs">
       <CardHeader>
-        <CardTitle className="text-base">Para hoy</CardTitle>
-        <CardDescription>
-          {agenda.total === 0
-            ? "Nada urgente: todo al día."
-            : `${num(hoy)} para hoy · ${num(semana)} esta semana · ${eur(agenda.importe_en_juego)} en juego`}
-        </CardDescription>
+        <CardTitle>Para hoy</CardTitle>
+        <CardDescription className="text-xs">{descripcion(agenda, error)}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {agenda.items.length === 0 && (
-          <p className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            <CheckCircle2Icon className="size-4 text-emerald-500" /> Sin impagos, vencimientos inminentes ni incidencias urgentes.
-          </p>
-        )}
-        {agenda.items.map((i) => (
-          <div key={i.clave} className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
-            <span className={cn("size-2 shrink-0 rounded-full", COLOR_NIVEL[i.nivel])} title={ETIQUETA_NIVEL[i.nivel]} role="img" aria-label={ETIQUETA_NIVEL[i.nivel]} />
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <p className="truncate text-sm font-medium">{i.titulo}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {[plazoAgenda(i), i.ubicacion].filter(Boolean).join(" · ")}
-              </p>
-            </div>
-            {i.importe !== null && i.importe > 0 && <p className="hidden shrink-0 text-sm font-medium tabular-nums sm:block">{eur(i.importe)}</p>}
-            <BotonAtlas pregunta={preguntaAgenda(i)} />
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
+        {error && !agenda ? (
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">Las tareas no están disponibles ahora.</span>
+            <Button size="sm" variant="outline" onClick={onReintentar}>
+              Reintentar
+            </Button>
           </div>
-        ))}
-        {agenda.total > agenda.items.length && (
-          <Link href="/dashboard/alertas" className="flex items-center gap-1 pt-1 text-xs text-primary hover:underline">
+        ) : !agenda || cargando ? (
+          Array.from({ length: 3 }, (_, n) => <Skeleton key={n} className="h-12 w-full" />)
+        ) : agenda.items.length === 0 ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle2Icon className="size-4 shrink-0 text-emerald-500" /> Sin impagos, vencimientos inminentes ni incidencias urgentes.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {agenda.items.slice(0, TAREAS_VISIBLES).map((t) => (
+              <Tarea key={t.clave} tarea={t} />
+            ))}
+          </ul>
+        )}
+        {agenda && agenda.total > TAREAS_VISIBLES && (
+          <Link href="/dashboard/alertas" className="mt-auto flex items-center gap-1 text-xs text-primary hover:underline">
             Ver las {num(agenda.total)} tareas y alertas <ArrowRightIcon className="size-3" />
           </Link>
         )}

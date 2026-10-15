@@ -40,6 +40,18 @@ export function enlazarReferencias(texto: string): string {
   );
 }
 
+/**
+ * Canoniza un enlace interno que apunta a la ficha de una propiedad. El modelo a veces inventa la ruta
+ * o el parámetro (/dashboard/unidades?referencia=U-00000); aquí se reconoce por la referencia y se
+ * reescribe a /dashboard/propiedades?ref=U-00000. Devuelve null si no lleva ninguna referencia.
+ */
+export function normalizarEnlaceFicha(href: string): string | null {
+  const limpio = href.trim();
+  if (!/^\/(?!\/)/.test(limpio) || !/(unidades|propiedades)/.test(limpio)) return null;
+  const m = limpio.match(/U-\d{3,6}/);
+  return m ? `/dashboard/propiedades?ref=${m[0]}` : null;
+}
+
 export const esCita = (href?: string) => !!href && href.startsWith("cita:");
 export const idDeCita = (href: string) => href.slice("cita:".length);
 
